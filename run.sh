@@ -23,9 +23,7 @@ do
 			--max-crypto-buf 10 --max-trust-buf 20 --max-reputation-buf 10 --max-stereotype-buf 20 \
 			--eviction-strategy "$ES" --behaviour "$BEHAVIOUR" --seed 1 > "log-$ES.txt"
 
-		./analysis.py metrics.pickle
-
-		mv utility.pdf "$BEHAVIOUR/complete-buf-utility-$ES.pdf"
+		./analysis.py metrics.pickle --path-prefix "$BEHAVIOUR/complete-buf-$ES-"
 	done
 
 	echo "-----------"
@@ -39,9 +37,7 @@ do
 			--max-crypto-buf 10 --max-trust-buf 10 --max-reputation-buf 10 --max-stereotype-buf 10 \
 			--eviction-strategy "$ES" --behaviour "$BEHAVIOUR" --seed 1 > "log-$ES.txt"
 
-		./analysis.py metrics.pickle
-
-		mv utility.pdf "$BEHAVIOUR/large-buf-utility-$ES.pdf"
+		./analysis.py metrics.pickle --path-prefix "$BEHAVIOUR/large-buf-$ES-"
 	done
 
 	echo "-----------"
@@ -55,9 +51,7 @@ do
 			--max-crypto-buf 5 --max-trust-buf 5 --max-reputation-buf 5 --max-stereotype-buf 5 \
 			--eviction-strategy "$ES" --behaviour "$BEHAVIOUR" --seed 1 > log-$ES.txt
 
-		./analysis.py metrics.pickle
-
-		mv utility.pdf "$BEHAVIOUR/small-buf-utility-$ES.pdf"
+		./analysis.py metrics.pickle --path-prefix "$BEHAVIOUR/small-buf-$ES-"
 	done
 
 	echo "==========="

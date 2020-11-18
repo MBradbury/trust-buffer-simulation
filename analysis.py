@@ -14,7 +14,7 @@ from simulation.capability import CapabilityBehaviourState, InteractionObservati
 plt.rcParams['text.usetex'] = True
 plt.rcParams['font.size'] = 12
 
-def graph_utility(metrics: Metrics):
+def graph_utility(metrics: Metrics, path_prefix: str):
     fig = plt.figure()
     ax = fig.gca()
 
@@ -41,9 +41,9 @@ def graph_utility(metrics: Metrics):
 
     ax.legend()
 
-    savefig(fig, f"utility.pdf")
+    savefig(fig, f"{path_prefix}utility.pdf")
 
-def graph_behaviour_state(metrics: Metrics):
+def graph_behaviour_state(metrics: Metrics, path_prefix: str):
     agents, capabilities = zip(*metrics.behaviour_changes.keys())
     agents = list(sorted(set(agents)))
     capabilities = list(sorted(set(capabilities)))
@@ -52,10 +52,16 @@ def graph_behaviour_state(metrics: Metrics):
 
     yaxis_categories = [obs.name for obs in CapabilityBehaviourState]
 
-    print(yaxis_categories)
-
     for (agent, cap) in itertools.product(agents, capabilities):
-        behaviour = metrics.behaviour_changes[(agent, cap)]
+        try:
+            behaviour = metrics.behaviour_changes[(agent, cap)]
+        except KeyError:
+            # Skip when there are no records
+            continue
+
+        # Skip when there were no interactions
+        if not behaviour:
+            continue
 
         X, Y = zip(*behaviour)
         Y = [y.name for y in Y]
@@ -71,9 +77,9 @@ def graph_behaviour_state(metrics: Metrics):
 
     fig.subplots_adjust(hspace=0.35)
 
-    savefig(fig, f"behaviour_state.pdf")
+    savefig(fig, f"{path_prefix}behaviour_state.pdf")
 
-def graph_interactions(metrics: Metrics):
+def graph_interactions(metrics: Metrics, path_prefix: str):
     keys = {(target, capability) for (t, source, capability, utility, target, outcome) in metrics.utility}
 
     all_interactions = {
@@ -94,10 +100,16 @@ def graph_interactions(metrics: Metrics):
 
     yaxis_categories = [obs.name for obs in InteractionObservation]
 
-    print(yaxis_categories)
-
     for (agent, cap) in itertools.product(agents, capabilities):
-        interactions = all_interactions[(agent, cap)]
+        try:
+            interactions = all_interactions[(agent, cap)]
+        except KeyError:
+            # Skip when there are no records
+            continue
+
+        # Skip when there were no interactions
+        if not interactions:
+            continue
 
         X, Y = zip(*interactions)
         Y = [y.name for y in Y]
@@ -113,7 +125,7 @@ def graph_interactions(metrics: Metrics):
 
     fig.subplots_adjust(hspace=0.35)
 
-    savefig(fig, f"interactions.pdf")
+    savefig(fig, f"{path_prefix}interactions.pdf")
 
 
 def check_fonts(path: str):
@@ -141,9 +153,9 @@ def main(args):
     with open(args.metrics_path, "rb") as f:
         metrics = pickle.load(f)
 
-    graph_utility(metrics)
-    graph_behaviour_state(metrics)
-    graph_interactions(metrics)
+    graph_utility(metrics, args.prefix)
+    graph_behaviour_state(metrics, args.prefix)
+    graph_interactions(metrics, args.prefix)
 
 if __name__ == "__main__":
     import argparse
@@ -151,6 +163,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Analyse')
     parser.add_argument('metrics_path', type=str,
                         help='The path to the metrics to analyse')
+
+    parser.add_argument('--path-prefix', type=str, default="",
+                        help='The prefix to the location to output results')
 
     args = parser.parse_args()
 
