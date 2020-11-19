@@ -37,7 +37,7 @@ def main(args):
 
     sim.run(args.max_start_delay)
 
-    sim.metrics.save(sim)
+    sim.metrics.save(sim, args)
 
 def eviction_strategies():
     return [cls.short_name for cls in EvictionStrategy.__subclasses__()]

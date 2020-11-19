@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 from dataclasses import dataclass
+from itertools import chain
 
 from simulation.bounded_list import BoundExceedError, BoundedList
 
@@ -36,6 +37,13 @@ class TrustItem:
 
     def total_count(self) -> int:
         return self.correct_count + self.incorrect_count
+
+    def brs_trust(self) -> float:
+        if self.total_count() == 0:
+            # Avoid division by zero errors
+            return 0.5
+        else: 
+            return self.correct_count / float(self.correct_count + self.incorrect_count)
 
     def basic(self):
         return (self.agent.name, self.capability.name, self.correct_count, self.incorrect_count)
@@ -106,7 +114,7 @@ class AgentBuffers:
             self.crypto.append(item)
         except BoundExceedError:
             # Consider evicting
-            choice = es.choose_crypto(self.crypto)
+            choice = es.choose_crypto(self.crypto, self)
             if choice is not None:
                 self.crypto.remove(choice)
                 self.log(f"Evicted {choice} from {[x.basic() for x in self.crypto]}")
@@ -122,7 +130,7 @@ class AgentBuffers:
         try:
             self.trust.append(item)
         except BoundExceedError:
-            choice = es.choose_trust(self.trust)
+            choice = es.choose_trust(self.trust, self)
             if choice is not None:
                 self.trust.remove(choice)
                 self.log(f"Evicted {choice} from {[x.basic() for x in self.trust]}")
@@ -138,7 +146,7 @@ class AgentBuffers:
         try:
             self.reputation.append(item)
         except BoundExceedError:
-            choice = es.choose_reputation(self.reputation)
+            choice = es.choose_reputation(self.reputation, self)
             if choice is not None:
                 self.reputation.remove(choice)
                 self.log(f"Evicted {choice} from {[x.basic() for x in self.reputation]}")
@@ -154,7 +162,7 @@ class AgentBuffers:
         try:
             self.stereotype.append(item)
         except BoundExceedError:
-            choice = es.choose_stereotype(self.stereotype)
+            choice = es.choose_stereotype(self.stereotype, self)
             if choice is not None:
                 self.stereotype.remove(choice)
                 self.log(f"Evicted {choice} from {[x.basic() for x in self.stereotype]}")
@@ -199,13 +207,60 @@ class AgentBuffers:
         if targets is None:
             targets = sim.agents
 
-        agents = [a for a in targets if a is not agent]
+        agents = [
+            a for a in targets
+            if a is not agent and capability in a.capabilities
+        ]
 
         print(f"#Evaluating utility for {agent}:")
         for a in agents:
             print(f"#\t{a}: Uc={Uc(a)} Ud={Ud(a)} Up={Up(a)} Us={Us(a)}")
 
         return sum(Uc(a) * (Ud(a) + Up(a) + Us(a)) * 1.0/3.0 for a in agents) / len(agents)
+
+    def max_utility(self):
+        sim = self.agent.sim
+
+        agents = set(sim.agents) - {self.agent}
+        sorted_agents = list(sorted(agents, key=lambda x: len(set(x.capabilities) & set(self.agent.capabilities)), reverse=True))
+        selected_agents = sorted_agents[0:self.crypto.length]
+
+        # crypto and reputation per agent
+        # trust and stereotype per (agent, capability)
+
+        global available_trust
+        global available_reputation
+        global available_stereotype
+
+        available_trust = self.trust.length
+        available_reputation = self.reputation.length
+        available_stereotype = self.stereotype.length
+
+        def Ud(other: Agent):
+            global available_trust
+            if available_trust > 0:
+                available_trust -= 1
+                return 1
+            else:
+                return 0
+
+        def Up(other: Agent):
+            global available_reputation
+            if available_reputation > 0:
+                available_reputation -= 1
+                return 1
+            else:
+                return 0
+
+        def Us(other: Agent):
+            global available_stereotype
+            if available_stereotype > 0:
+                available_stereotype -= 1
+                return 1
+            else:
+                return 0
+
+        return sum((Ud(a) + Up(a) + Us(a)) * 1.0/3.0 for a in selected_agents) / len(agents)
 
     def log(self, message: str):
         self.agent.log(message)

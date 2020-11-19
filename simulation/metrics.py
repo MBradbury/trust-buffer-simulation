@@ -33,14 +33,23 @@ class Metrics:
     def add_evicted_stereotype(self, t: float, agent: Agent, choice):
         self.evicted_stereotype.append((t, agent.name, choice.basic()))
 
-    def save(self, sim):
+    def save(self, sim, args):
         # save information from sim
+
+        self.args = args
 
         self.behaviour_changes = {
             (agent.name, capability.name): behaviour.state_history
             for agent in sim.agents
             for (capability, behaviour) in agent.capability_behaviour.items()
         }
+
+        self.max_utilities = {
+            agent.name: agent.buffers.max_utility()
+            for agent in sim.agents
+        }
+
+        pprint(self.max_utilities)
 
         #pprint(self.interaction_outcomes)
         #pprint(self.utility)
