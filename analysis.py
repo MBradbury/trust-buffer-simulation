@@ -153,9 +153,9 @@ def main(args):
     with open(args.metrics_path, "rb") as f:
         metrics = pickle.load(f)
 
-    graph_utility(metrics, args.prefix)
-    graph_behaviour_state(metrics, args.prefix)
-    graph_interactions(metrics, args.prefix)
+    graph_utility(metrics, args.path_prefix)
+    graph_behaviour_state(metrics, args.path_prefix)
+    graph_interactions(metrics, args.path_prefix)
 
 if __name__ == "__main__":
     import argparse
