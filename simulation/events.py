@@ -31,12 +31,10 @@ class AgentInit(BaseEvent):
     def action(self, sim: Simulation):
         super().action(sim)
 
-        sim.queue.put(AgentTrustDissemination(self.event_time + self.agent.next_trust_dissemination_period(sim.rng), self.agent))
+        sim.add_event(AgentTrustDissemination(self.event_time + self.agent.next_trust_dissemination_period(sim.rng), self.agent))
 
         for capability in self.agent.capabilities:
-            sim.queue.put(AgentCapabilityTask(self.event_time + capability.next_task_period(sim.rng), self.agent, capability))
-
-            #sim.queue.put(AgentCapabilityBehaviourUpdate(self.event_time + EPSILON, self.agent, capability))
+            sim.add_event(AgentCapabilityTask(self.event_time + capability.next_task_period(sim.rng), self.agent, capability))
 
     def __repr__(self):
         return f"{type(self).__name__}({self.agent!s})"
@@ -58,7 +56,7 @@ class AgentCapabilityTask(BaseEvent):
             self.log(sim, "Unable to select agent to perform task")
 
         # Re-add this event
-        sim.queue.put(AgentCapabilityTask(self.event_time + self.capability.next_task_period(sim.rng), self.agent, self.capability))
+        sim.add_event(AgentCapabilityTask(self.event_time + self.capability.next_task_period(sim.rng), self.agent, self.capability))
 
     def __repr__(self):
         return f"{type(self).__name__}({self.agent!s}, {self.capability!s})"
@@ -77,6 +75,7 @@ class AgentTaskInteraction(BaseEvent):
         # Source needs target's crypto information to process response
         sim.es.use_crypto(self.source.buffers.find_crypto(self.target))
 
+        # Want to use the same seed for the interaction that does occur and the potential interactions
         seed = sim.rng.getrandbits(32)
 
         # Did the target perform the interaction well?
@@ -91,8 +90,10 @@ class AgentTaskInteraction(BaseEvent):
         self.log(sim, f"Outcomes|{outcomes}")
         sim.metrics.add_interaction_outcomes(sim.current_time, self.source, self.capability, outcomes)
 
+        # Who are we interested in evaluating the utility of the buffers for?
         #utility_targets = [agent for (agent, outcome) in outcomes.items() if outcome is InteractionObservation.Correct]
         utility_targets = outcomes.keys()
+
         utility = self.buffers.utility(self.source, self.capability, targets=utility_targets)
         self.log(sim, f"Value of buffers {utility} {self.capability}")
 
@@ -118,7 +119,7 @@ class AgentTrustDissemination(BaseEvent):
                 agent.receive_trust_information(self.agent)
 
         # Re-add this event
-        sim.queue.put(AgentTrustDissemination(self.event_time + self.agent.next_trust_dissemination_period(sim.rng), self.agent))
+        sim.add_event(AgentTrustDissemination(self.event_time + self.agent.next_trust_dissemination_period(sim.rng), self.agent))
 
     def __repr__(self):
         return f"{type(self).__name__}({self.agent!s})"
@@ -151,25 +152,3 @@ class AgentStereotypeRequest(BaseEvent):
 
     def __repr__(self):
         return f"{type(self).__name__}(req={self.requester!s}, of={self.agent!s})"
-
-"""
-class AgentCapabilityBehaviourUpdate(BaseEvent):
-    def __init__(self, event_time: float, agent: Agent, capability: Capability):
-        super().__init__(event_time)
-        self.agent = agent
-        self.capability = capability
-
-    def action(self, sim: Simulation):
-        super().action(sim)
-
-        behaviour = self.agent.capability_behaviour[self.capability]
-
-        behaviour.move_to_next_interaction(sim.rng.getrandbits(32))
-
-        self.log(sim, f"{self.agent!s} {self.capability!s} now at {behaviour.current_interaction}")
-
-        sim.queue.put(AgentCapabilityBehaviourUpdate(self.event_time + BEHAVIOUR_UPDATE_PERIOD, self.agent, self.capability))
-
-    def __repr__(self):
-        return f"{type(self).__name__}({self.agent!s}, {self.capability!s})"
-"""

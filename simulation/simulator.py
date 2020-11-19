@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-import secrets
 import random
-from queue import PriorityQueue
-from typing import List, Deque, Any
+import heapq
+from typing import List
 
 from simulation.agent import *
 from simulation.capability import *
@@ -27,17 +26,20 @@ class Simulator:
         self.duration = duration
 
         self.current_time = 0
-        self.queue = PriorityQueue()
+        self.queue = []
 
         self.metrics = Metrics()
+
+    def add_event(self, event):
+        heapq.heappush(self.queue, event)
 
     def run(self, max_start_delay: float):
         # Add start event
         for agent in self.agents:
-            self.queue.put(AgentInit(self.rng.uniform(0, max_start_delay), agent))
+            self.add_event(AgentInit(self.rng.uniform(0, max_start_delay), agent))
 
-        while not self.queue.empty():
-            item = self.queue.get()
+        while self.queue:
+            item = heapq.heappop(self.queue)
 
             assert item.event_time >= self.current_time
 
@@ -51,4 +53,3 @@ class Simulator:
 
     def log(self, message: str):
         print(f"{self.current_time}|{message}")
-

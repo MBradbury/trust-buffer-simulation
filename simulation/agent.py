@@ -283,10 +283,10 @@ class Agent:
         return rng.expovariate(1.0 / self.trust_dissem_period)
 
     def request_stereotype(self, agent: Agent):
-        self.sim.queue.put(AgentStereotypeRequest(self.sim.current_time + EPSILON, self, agent))
+        self.sim.add_event(AgentStereotypeRequest(self.sim.current_time + EPSILON, self, agent))
 
     def request_crypto(self, agent: Agent):
-        self.sim.queue.put(AgentCryptoRequest(self.sim.current_time + EPSILON, self, agent))
+        self.sim.add_event(AgentCryptoRequest(self.sim.current_time + EPSILON, self, agent))
 
     def receive_trust_information(self, agent: Agent):
         if agent is self:
@@ -380,7 +380,7 @@ class Agent:
         # Record the values in the buffers at the time the interaction was initiated
         buffers = copy.copy(self.buffers)
 
-        self.sim.queue.put(AgentTaskInteraction(self.sim.current_time + EPSILON, self, capability, selected_agent, buffers))
+        self.sim.add_event(AgentTaskInteraction(self.sim.current_time + EPSILON, self, capability, selected_agent, buffers))
 
 
     def log(self, message: str):

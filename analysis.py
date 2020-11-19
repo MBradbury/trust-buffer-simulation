@@ -191,12 +191,6 @@ def graph_evictions(metrics: Metrics, path_prefix: str):
         for (column, column_data) in column_to_data.items()
     }
 
-    """all_categories = {
-        (agent, column): list(sorted([str(i) for (t, a, i) in column_data if a == agent]))
-        for agent in agents
-        for (column, column_data) in column_to_data.items()
-    }"""
-
     fig, axs = plt.subplots(nrows=len(agents), ncols=len(columns), sharex=True, squeeze=False, figsize=(18,30))
 
     for (agent, col) in itertools.product(agents, columns):
@@ -219,11 +213,6 @@ def graph_evictions(metrics: Metrics, path_prefix: str):
         ax.title.set_text(f"{agent} {col}")
 
         ax.tick_params(axis='y', labelsize="small")
-
-        #yaxis_categories = all_categories[(agent, col)]
-
-        #ax.set_ylim(0 - 0.5, len(yaxis_categories) - 1 + 0.5)
-        #ax.set_yticks(yaxis_categories)
 
     fig.subplots_adjust(hspace=0.35)
 
