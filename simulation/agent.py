@@ -109,7 +109,7 @@ class AgentBuffers:
             choice = es.choose_crypto(self.crypto)
             if choice is not None:
                 self.crypto.remove(choice)
-                self.log(f"Evicted {choice}")
+                self.log(f"Evicted {choice} from {[x.basic() for x in self.crypto]}")
                 self.agent.sim.metrics.add_evicted_crypto(self.agent.sim.current_time, self.agent, choice)
 
                 self.crypto.append(item)
@@ -125,7 +125,7 @@ class AgentBuffers:
             choice = es.choose_trust(self.trust)
             if choice is not None:
                 self.trust.remove(choice)
-                self.log(f"Evicted {choice}")
+                self.log(f"Evicted {choice} from {[x.basic() for x in self.trust]}")
                 self.agent.sim.metrics.add_evicted_trust(self.agent.sim.current_time, self.agent, choice)
 
                 self.trust.append(item)
@@ -141,7 +141,7 @@ class AgentBuffers:
             choice = es.choose_reputation(self.reputation)
             if choice is not None:
                 self.reputation.remove(choice)
-                self.log(f"Evicted {choice}")
+                self.log(f"Evicted {choice} from {[x.basic() for x in self.reputation]}")
                 self.agent.sim.metrics.add_evicted_reputation(self.agent.sim.current_time, self.agent, choice)
 
                 self.reputation.append(item)
@@ -157,7 +157,7 @@ class AgentBuffers:
             choice = es.choose_stereotype(self.stereotype)
             if choice is not None:
                 self.stereotype.remove(choice)
-                self.log(f"Evicted {choice}")
+                self.log(f"Evicted {choice} from {[x.basic() for x in self.stereotype]}")
                 self.agent.sim.metrics.add_evicted_stereotype(self.agent.sim.current_time, self.agent, choice)
 
                 self.stereotype.append(item)
@@ -234,6 +234,9 @@ class Agent:
         self.sim.queue.put(AgentCryptoRequest(self.sim.current_time + EPSILON, self, agent))
 
     def receive_trust_information(self, agent: Agent):
+        if agent is self:
+            return
+
         crypto_item = self.buffers.find_crypto(agent)
         if crypto_item is None:
             self.request_crypto(agent)
@@ -258,6 +261,9 @@ class Agent:
 
 
     def receive_crypto_information(self, agent: Agent):
+        if agent is self:
+            return
+
         crypto_item = self.buffers.find_crypto(agent)
         if crypto_item is not None:
             return
@@ -267,6 +273,9 @@ class Agent:
         self.buffers.add_crypto(self.sim.es, new_crypto_item)
 
     def receive_stereotype_information(self, agent: Agent, capability: Capability):
+        if agent is self:
+            return
+
         # Don't want to record capabilities we do not have
         if capability not in self.capabilities:
             return
@@ -302,9 +311,9 @@ class Agent:
 
             self.sim.es.use_trust(self.buffers.find_trust(item.agent, capability))
 
-            for item in self.buffers.reputation:
-                if any(trust_item.agent is item and trust_item.capability is capability for trust_item in item.trust_items):
-                    self.sim.es.use_reputation(item)
+            for reputation_item in self.buffers.reputation:
+                if any(trust_item.agent is item and trust_item.capability is capability for trust_item in reputation_item.trust_items):
+                    self.sim.es.use_reputation(reputation_item)
 
             self.sim.es.use_stereotype(self.buffers.find_stereotype(item.agent, capability))
 

@@ -26,6 +26,8 @@ class CapabilityBehaviour:
         (x, state_sequence) = self.hmm.sample(1, random_state=seed)
 
         assert len(state_sequence) == 1
+        assert len(x) == 1
+        assert len(x[0]) == 1
 
         # Update the state of where the HMM is
         self.hmm.startprob_ = np.array([
@@ -39,6 +41,10 @@ class CapabilityBehaviour:
 
     def peek_interaction(self, seed):
         (x, state_sequence) = self.hmm.sample(1, random_state=seed)
+
+        assert len(state_sequence) == 1
+        assert len(x) == 1
+        assert len(x[0]) == 1
 
         return self.observations[x[0][0]]
 
