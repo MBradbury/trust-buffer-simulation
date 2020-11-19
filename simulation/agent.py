@@ -216,7 +216,10 @@ class AgentBuffers:
         for a in agents:
             print(f"#\t{a}: Uc={Uc(a)} Ud={Ud(a)} Up={Up(a)} Us={Us(a)}")
 
-        return sum(Uc(a) * (Ud(a) + Up(a) + Us(a)) * 1.0/3.0 for a in agents) / len(agents)
+        if not agents:
+            return float("NaN")
+        else:
+            return sum(Uc(a) * (Ud(a) + Up(a) + Us(a)) * 1.0/3.0 for a in agents) / len(agents)
 
     def max_utility(self):
         sim = self.agent.sim
