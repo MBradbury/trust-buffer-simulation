@@ -108,8 +108,10 @@ def graph_behaviour_state(metrics: Metrics, path_prefix: str):
 
         ax.title.set_text(f"{agent} {cap}")
 
-        ax.set_ylim(0 - 0.5, len(yaxis_categories) - 1 + 0.5)
-        ax.set_yticks(yaxis_categories)
+        #ax.set_xlim(min(X), max(X))
+        #ax.plot([min(X)-100+i for i in range(len(yaxis_categories))], yaxis_categories)
+        #ax.set_yticks(yaxis_categories)
+        #ax.set_ylim(0 - 0.5, len(yaxis_categories) - 1 + 0.5)
 
     fig.subplots_adjust(hspace=0.35)
 
@@ -156,8 +158,10 @@ def graph_interactions(metrics: Metrics, path_prefix: str):
 
         ax.title.set_text(f"{agent} {cap}")
 
-        ax.set_ylim(0 - 0.5, len(yaxis_categories) - 1 + 0.5)
-        ax.set_yticks(yaxis_categories)
+        #ax.set_xlim(min(X), max(X))
+        #ax.plot([min(X)-100+i for i in range(len(yaxis_categories))], yaxis_categories)
+        #ax.set_yticks(yaxis_categories)
+        #ax.set_ylim(0 - 0.5, len(yaxis_categories) - 1 + 0.5)
 
     fig.subplots_adjust(hspace=0.35)
 
