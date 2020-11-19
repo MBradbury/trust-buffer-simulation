@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BEHAVIOURS="AlwaysGoodBehaviour VeryGoodBehaviour GoodBehaviour"
+BEHAVIOURS="UnstableBehaviour AlwaysGoodBehaviour VeryGoodBehaviour GoodBehaviour"
 
 ESs="Random FIFO LRU MRU Chen2016 FiveBand"
 
