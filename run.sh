@@ -7,6 +7,9 @@ ESs="Random FIFO LRU MRU Chen2016 FiveBand"
 rm -f *.pdf
 
 SEED=2
+NUM_AGENTS=10
+NUM_CAPABILITIES=2
+DURATION=120
 
 for BEHAVIOUR in $BEHAVIOURS
 do
@@ -21,7 +24,7 @@ do
 	do
 		echo "Running $ES"
 
-		./run_simulation.py --num-agents 10 --num-capabilities 2 --duration 50 \
+		./run_simulation.py --num-agents $NUM_AGENTS --num-capabilities $NUM_CAPABILITIES --duration $DURATION \
 			--max-crypto-buf 10 --max-trust-buf 20 --max-reputation-buf 10 --max-stereotype-buf 20 \
 			--eviction-strategy "$ES" --behaviour "$BEHAVIOUR" --seed $SEED > "log-$ES.txt"
 
@@ -35,7 +38,7 @@ do
 	do
 		echo "Running $ES"
 
-		./run_simulation.py --num-agents 10 --num-capabilities 2 --duration 50 \
+		./run_simulation.py --num-agents $NUM_AGENTS --num-capabilities $NUM_CAPABILITIES --duration $DURATION \
 			--max-crypto-buf 10 --max-trust-buf 10 --max-reputation-buf 10 --max-stereotype-buf 10 \
 			--eviction-strategy "$ES" --behaviour "$BEHAVIOUR" --seed $SEED > "log-$ES.txt"
 
@@ -49,7 +52,7 @@ do
 	do
 		echo "Running $ES"
 
-		./run_simulation.py --num-agents 10 --num-capabilities 2 --duration 50 \
+		./run_simulation.py --num-agents $NUM_AGENTS --num-capabilities $NUM_CAPABILITIES --duration $DURATION \
 			--max-crypto-buf 5 --max-trust-buf 5 --max-reputation-buf 5 --max-stereotype-buf 5 \
 			--eviction-strategy "$ES" --behaviour "$BEHAVIOUR" --seed $SEED > log-$ES.txt
 
