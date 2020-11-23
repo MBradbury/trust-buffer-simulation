@@ -10,9 +10,11 @@ from simulation.capability import *
 from simulation.eviction_strategy import *
 from simulation.events import *
 from simulation.metrics import Metrics
+from simulation.utility_targets import UtilityTargets
+
 
 class Simulator:
-    def __init__(self, seed: int, agents: List[Agent], escls, duration: float):
+    def __init__(self, seed: int, agents: List[Agent], escls, duration: float, utility_targets: UtilityTargets):
         # Initialise the PRNG and record the seed
         self.seed = seed
         self.rng = random.Random(self.seed)
@@ -24,6 +26,7 @@ class Simulator:
         self.es = escls(self)
 
         self.duration = duration
+        self.utility_targets = utility_targets
 
         self.current_time = 0
         self.queue = []

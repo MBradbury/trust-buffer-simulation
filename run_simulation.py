@@ -7,6 +7,7 @@ from simulation.eviction_strategy import *
 from simulation.events import *
 from simulation.metrics import Metrics
 from simulation.simulator import Simulator
+from simulation.utility_targets import UtilityTargets
 
 def get_eviction_strategy(short_name: str):
     [cls] = [cls for cls in EvictionStrategy.__subclasses__() if cls.short_name == short_name]
@@ -16,6 +17,10 @@ def get_behaviour(name: str):
     [cls] = [cls for cls in CapabilityBehaviour.__subclasses__() if cls.__name__ == name]
     return cls
 
+def get_agent_choose_behaviour(name: str):
+    [cls] = [cls for cls in AgentChooseBehaviour.__subclasses__() if cls.short_name == name]
+    return cls
+
 def main(args):
     seed = args.seed if args.seed is not None else secrets.randbits(32)
 
@@ -23,9 +28,11 @@ def main(args):
 
     behaviour = get_behaviour(args.behaviour)
 
+    choose = get_agent_choose_behaviour(args.agent_choose)
+
     # Assume that each agent has all capabilities
     agents = [
-        Agent(f"A{n}", capabilities, behaviour, args.trust_dissem_period,
+        Agent(f"A{n}", capabilities, behaviour, choose, args.trust_dissem_period,
               args.max_crypto_buf, args.max_trust_buf,
               args.max_reputation_buf, args.max_stereotype_buf)
         for n in range(args.num_agents)
@@ -33,7 +40,7 @@ def main(args):
 
     es = get_eviction_strategy(args.eviction_strategy)
 
-    sim = Simulator(seed, agents, es, args.duration)
+    sim = Simulator(seed, agents, es, args.duration, args.utility_targets)
 
     sim.run(args.max_start_delay)
 
@@ -44,6 +51,9 @@ def eviction_strategies():
 
 def behaviours():
     return [cls.__name__ for cls in CapabilityBehaviour.__subclasses__()]
+
+def agent_choose_behaviours():
+    return [cls.short_name for cls in AgentChooseBehaviour.__subclasses__()]
 
 if __name__ == "__main__":
     import argparse
@@ -79,6 +89,10 @@ if __name__ == "__main__":
                         help='The behaviour of the agent capabilities')
     parser.add_argument('--eviction-strategy', type=str, required=True, choices=eviction_strategies(),
                         help='The eviction strategy')
+    parser.add_argument('--agent-choose', type=str, required=True, choices=agent_choose_behaviours(),
+                        help='The behaviour to choose which agent to interact with to perform a task')
+    parser.add_argument('--utility-targets', type=UtilityTargets, required=True, choices=list(UtilityTargets),
+                        help='Which targets to evaluate utility against')
 
     parser.add_argument('--seed', type=int, required=False, default=None,
                         help='The simulation seed')

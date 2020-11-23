@@ -3,8 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from functools import total_ordering
 
-from simulation.constants import EPSILON, BEHAVIOUR_UPDATE_PERIOD
+from simulation.constants import EPSILON
 from simulation.capability import InteractionObservation
+from simulation.utility_targets import UtilityTargets
 
 @total_ordering
 @dataclass(eq=False)
@@ -69,11 +70,22 @@ class AgentTaskInteraction(BaseEvent):
         self.target = target
         self.buffers = buffers
 
+    def _ensure_crypto_exists(self, sim: Simulation, agent: Agent, other: Agent):
+        crypto = agent.buffers.find_crypto(other)
+        if crypto is None:
+            agent.receive_crypto_information(other)
+            crypto = agent.buffers.find_crypto(other)
+            assert crypto is not None
+        sim.es.use_crypto(crypto)
+
     def action(self, sim: Simulation):
         super().action(sim)
 
         # Source needs target's crypto information to process response
-        sim.es.use_crypto(self.source.buffers.find_crypto(self.target))
+        self._ensure_crypto_exists(sim, self.source, self.target)
+
+        # Target also needs sources's crypto information to process response
+        self._ensure_crypto_exists(sim, self.target, self.source)
 
         # Want to use the same seed for the interaction that does occur and the potential interactions
         seed = sim.rng.getrandbits(32)
@@ -91,8 +103,12 @@ class AgentTaskInteraction(BaseEvent):
         sim.metrics.add_interaction_outcomes(sim.current_time, self.source, self.capability, outcomes)
 
         # Who are we interested in evaluating the utility of the buffers for?
-        #utility_targets = [agent for (agent, outcome) in outcomes.items() if outcome is InteractionObservation.Correct]
-        utility_targets = outcomes.keys()
+        if sim.utility_targets == UtilityTargets.All:
+            utility_targets = outcomes.keys()
+        elif sim.utility_targets == UtilityTargets.Good:
+            utility_targets = [agent for (agent, outcome) in outcomes.items() if outcome is InteractionObservation.Correct]
+        else:
+            raise NotImplementedError()
 
         utility = self.buffers.utility(self.source, self.capability, targets=utility_targets)
         self.log(sim, f"Value of buffers {utility} {self.capability}")

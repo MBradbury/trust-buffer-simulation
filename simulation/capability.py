@@ -41,7 +41,7 @@ class CapabilityBehaviour:
 
         return self.observations[x[0][0]]
 
-    def peek_interaction(self, seed):
+    def peek_interaction(self, seed: int):
         (x, state_sequence) = self.hmm.sample(1, random_state=seed)
 
         assert len(state_sequence) == 1
@@ -70,6 +70,8 @@ The observation behaviour is: A : CapabilityBehaviourState x InteractionObservat
 """
 
 class AlwaysGoodBehaviour(CapabilityBehaviour):
+    brs_stereotype = (20, 0)
+
     def __init__(self):
         super().__init__()
 
@@ -86,6 +88,8 @@ class AlwaysGoodBehaviour(CapabilityBehaviour):
         ])
 
 class AlwaysBadBehaviour(CapabilityBehaviour):
+    brs_stereotype = (0, 20)
+
     def __init__(self):
         super().__init__()
 
@@ -102,6 +106,8 @@ class AlwaysBadBehaviour(CapabilityBehaviour):
         ])
 
 class VeryGoodBehaviour(CapabilityBehaviour):
+    brs_stereotype = (19, 1)
+
     def __init__(self):
         super().__init__()
 
@@ -118,6 +124,8 @@ class VeryGoodBehaviour(CapabilityBehaviour):
         ])
 
 class GoodBehaviour(CapabilityBehaviour):
+    brs_stereotype = (15, 5)
+
     def __init__(self):
         super().__init__()
 
@@ -134,6 +142,8 @@ class GoodBehaviour(CapabilityBehaviour):
         ])
 
 class UnstableBehaviour(CapabilityBehaviour):
+    brs_stereotype = (10, 10)
+
     def __init__(self):
         super().__init__()
 
