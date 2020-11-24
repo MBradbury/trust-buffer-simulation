@@ -106,7 +106,7 @@ class AgentTaskInteraction(BaseEvent):
         if sim.utility_targets == UtilityTargets.All:
             utility_targets = outcomes.keys()
         elif sim.utility_targets == UtilityTargets.Good:
-            utility_targets = [agent for (agent, outcome) in outcomes.items() if outcome is InteractionObservation.Correct]
+            utility_targets = [a for (a, o) in outcomes.items() if o == InteractionObservation.Correct]
         else:
             raise NotImplementedError()
 
