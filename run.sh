@@ -10,6 +10,8 @@ SEED=2
 NUM_AGENTS=10
 NUM_CAPABILITIES=2
 DURATION=120
+AGENT_CHOOSE=Random
+UTILITY_TARGETS=good
 
 for BEHAVIOUR in $BEHAVIOURS
 do
@@ -24,9 +26,10 @@ do
 	do
 		echo "Running $ES"
 
-		./run_simulation.py --num-agents $NUM_AGENTS --num-capabilities $NUM_CAPABILITIES --duration $DURATION \
+		./run_simulation.py --agents $NUM_AGENTS $BEHAVIOUR --num-capabilities $NUM_CAPABILITIES --duration $DURATION \
 			--max-crypto-buf 10 --max-trust-buf 20 --max-reputation-buf 10 --max-stereotype-buf 20 \
-			--eviction-strategy "$ES" --behaviour "$BEHAVIOUR" --seed $SEED > "log-$ES.txt"
+			--eviction-strategy "$ES" --agent-choose "$AGENT_CHOOSE" --utility-targets "$UTILITY_TARGETS" \
+			--seed $SEED > "log-$ES.txt"
 
 		./analysis.py metrics.pickle --path-prefix "$BEHAVIOUR/complete-buf-$ES-"
 	done
@@ -38,9 +41,10 @@ do
 	do
 		echo "Running $ES"
 
-		./run_simulation.py --num-agents $NUM_AGENTS --num-capabilities $NUM_CAPABILITIES --duration $DURATION \
+		./run_simulation.py --agents $NUM_AGENTS $BEHAVIOUR --num-capabilities $NUM_CAPABILITIES --duration $DURATION \
 			--max-crypto-buf 10 --max-trust-buf 10 --max-reputation-buf 10 --max-stereotype-buf 10 \
-			--eviction-strategy "$ES" --behaviour "$BEHAVIOUR" --seed $SEED > "log-$ES.txt"
+			--eviction-strategy "$ES" --agent-choose "$AGENT_CHOOSE" --utility-targets "$UTILITY_TARGETS" \
+			--seed $SEED > "log-$ES.txt"
 
 		./analysis.py metrics.pickle --path-prefix "$BEHAVIOUR/large-buf-$ES-"
 	done
@@ -52,9 +56,10 @@ do
 	do
 		echo "Running $ES"
 
-		./run_simulation.py --num-agents $NUM_AGENTS --num-capabilities $NUM_CAPABILITIES --duration $DURATION \
+		./run_simulation.py --agents $NUM_AGENTS $BEHAVIOUR --num-capabilities $NUM_CAPABILITIES --duration $DURATION \
 			--max-crypto-buf 5 --max-trust-buf 5 --max-reputation-buf 5 --max-stereotype-buf 5 \
-			--eviction-strategy "$ES" --behaviour "$BEHAVIOUR" --seed $SEED > log-$ES.txt
+			--eviction-strategy "$ES" --agent-choose "$AGENT_CHOOSE" --utility-targets "$UTILITY_TARGETS" \
+			--seed $SEED > log-$ES.txt
 
 		./analysis.py metrics.pickle --path-prefix "$BEHAVIOUR/small-buf-$ES-"
 	done

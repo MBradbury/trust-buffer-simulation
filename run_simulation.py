@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import argparse
+from itertools import chain
+
 from simulation.agent import *
 from simulation.capability import *
 from simulation.eviction_strategy import *
@@ -26,16 +29,20 @@ def main(args):
 
     capabilities = [Capability(f"C{n}", args.task_period) for n in range(args.num_capabilities)]
 
-    behaviour = get_behaviour(args.behaviour)
-
     choose = get_agent_choose_behaviour(args.agent_choose)
+
+    agent_behaviours = [
+        [behaviour] * num_agents
+        for (num_agents, behaviour) in args.agents
+    ]
 
     # Assume that each agent has all capabilities
     agents = [
-        Agent(f"A{n}", capabilities, behaviour, choose, args.trust_dissem_period,
+        Agent(f"A{n}", capabilities, get_behaviour(behaviour), choose, args.trust_dissem_period,
               args.max_crypto_buf, args.max_trust_buf,
               args.max_reputation_buf, args.max_stereotype_buf)
-        for n in range(args.num_agents)
+
+        for (n, behaviour) in enumerate(chain.from_iterable(agent_behaviours))
     ]
 
     es = get_eviction_strategy(args.eviction_strategy)
@@ -55,12 +62,35 @@ def behaviours():
 def agent_choose_behaviours():
     return [cls.short_name for cls in AgentChooseBehaviour.__subclasses__()]
 
-if __name__ == "__main__":
-    import argparse
+# From: https://stackoverflow.com/questions/8526675/python-argparse-optional-append-argument-with-choices
+class AgentBehavioursAction(argparse.Action):
+    CHOICES = behaviours()
+    def __call__(self, parser, namespace, values, option_string=None):
+        if values:
+            number = int(values[0])
+            if number <= 0:
+                message = f"invalid number: {number!r} (must be greater than 0)"
+                raise argparse.ArgumentError(self, message)
 
+            behaviour = values[1]
+            if behaviour not in self.CHOICES:
+                message = f"invalid choice: {behaviour!r} (choose from {', '.join(self.CHOICES)})"
+                raise argparse.ArgumentError(self, message)
+
+            if len(values) > 2:
+                raise argparse.ArgumentError(self, f"too many arguments {values}")
+
+            attr = getattr(namespace, self.dest)
+            if attr is None:
+                setattr(namespace, self.dest, [(number, behaviour)])
+            else:
+                setattr(namespace, self.dest, attr + [(number, behaviour)])
+
+if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Simulate')
-    parser.add_argument('--num-agents', type=int, required=True,
-                        help='The number of agents to include in the simulation')
+    parser.add_argument('--agents', required=True, nargs='+', metavar='num behaviour',
+                        action=AgentBehavioursAction,
+                        help='The number of agents to include in the simulation and the behaviour of those agents')
 
     parser.add_argument('--num-capabilities', type=int, required=False, default=2,
                         help='The number of capabilities that agents have')
@@ -85,8 +115,6 @@ if __name__ == "__main__":
     parser.add_argument('--max-stereotype-buf', type=int, required=True,
                         help='The maximum length of the stereotype buffer')
 
-    parser.add_argument('--behaviour', type=str, required=True, choices=behaviours(),
-                        help='The behaviour of the agent capabilities')
     parser.add_argument('--eviction-strategy', type=str, required=True, choices=eviction_strategies(),
                         help='The eviction strategy')
     parser.add_argument('--agent-choose', type=str, required=True, choices=agent_choose_behaviours(),
