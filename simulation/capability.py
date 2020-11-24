@@ -87,6 +87,16 @@ class AlwaysGoodBehaviour(CapabilityBehaviour):
             [0, 1]
         ])
 
+    def next_interaction(self, seed: int, t: float):
+        result = super().next_interaction(seed, t)
+        assert result is InteractionObservation.Correct
+        return result
+
+    def peek_interaction(self, seed: int):
+        result = super().peek_interaction(seed)
+        assert result is InteractionObservation.Correct
+        return result
+
 class AlwaysBadBehaviour(CapabilityBehaviour):
     brs_stereotype = (0, 20)
 
@@ -96,14 +106,24 @@ class AlwaysBadBehaviour(CapabilityBehaviour):
         self.hmm.startprob_ = np.array([0, 1])
 
         self.hmm.transmat_ = np.array([
-            [0, 1],
-            [1, 0]
+            [1, 0],
+            [0, 1]
         ])
 
         self.hmm.emissionprob_ = np.array([
             [1, 0],
             [0, 1]
         ])
+
+    def next_interaction(self, seed: int, t: float):
+        result = super().next_interaction(seed, t)
+        assert result is InteractionObservation.Incorrect
+        return result
+
+    def peek_interaction(self, seed: int):
+        result = super().peek_interaction(seed)
+        assert result is InteractionObservation.Incorrect
+        return result
 
 class VeryGoodBehaviour(CapabilityBehaviour):
     brs_stereotype = (19, 1)
