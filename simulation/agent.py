@@ -426,6 +426,8 @@ class Agent:
     def choose_agent_for_task(self, capability: Capability):
         try:
             item = self.choose.choose_agent_for_task(self, capability)
+            if item is None:
+                return None
 
             self.sim.es.use_crypto(item)
 
