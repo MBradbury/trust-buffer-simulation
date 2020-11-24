@@ -7,6 +7,9 @@ import itertools
 from itertools import chain
 from multiprocessing import Pool
 import functools
+from pprint import pprint
+
+import numpy as np
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -122,7 +125,7 @@ def graph_interactions(metrics: Metrics, path_prefix: str):
 
     all_interactions = {
         (target, capability): [
-            (ut, uoutcome)
+            (ut, f"{uoutcome.name} (Imp)" if np.isnan(uutility) else uoutcome.name)
 
             for (ut, usource, ucapability, uutility, utarget, uoutcome) in metrics.utility
             if utarget == target and ucapability == capability
@@ -150,7 +153,6 @@ def graph_interactions(metrics: Metrics, path_prefix: str):
             continue
 
         X, Y = zip(*interactions)
-        Y = [y.name for y in Y]
 
         ax = axs[agents.index(agent), capabilities.index(cap)]
 
@@ -166,6 +168,47 @@ def graph_interactions(metrics: Metrics, path_prefix: str):
     fig.subplots_adjust(hspace=0.35)
 
     savefig(fig, f"{path_prefix}interactions.pdf")
+
+def graph_interactions_utility_hist(metrics: Metrics, path_prefix: str):
+
+    correct = [
+        utility
+        for (t, source, capability, utility, target, outcome)
+        in metrics.utility
+        if outcome == InteractionObservation.Correct
+    ]
+
+    incorrect = [
+        utility
+        for (t, source, capability, utility, target, outcome)
+        in metrics.utility
+        if outcome == InteractionObservation.Incorrect
+        if not np.isnan(utility)
+    ]
+
+    incorrect_imp = [
+        utility
+        for (t, source, capability, utility, target, outcome)
+        in metrics.utility
+        if outcome == InteractionObservation.Incorrect
+        if np.isnan(utility)
+    ]
+
+    bins = np.arange(0, 1, 0.02)
+
+    fig = plt.figure()
+    ax = fig.gca()
+
+    ax.hist([correct, incorrect, incorrect_imp], bins, density=True, histtype='bar', stacked=True,
+            label=[f"Correct ({len(correct)})", f"Incorrect ({len(incorrect)})", f"Incorrect (Imp) ({len(incorrect_imp)})"])
+    ax.legend()
+
+    ax.set_xlim(0, 1)
+
+    ax.set_xlabel('Utility (\\%)')
+    ax.set_ylabel('Interaction Count')
+
+    savefig(fig, f"{path_prefix}interactions-utility-hist.pdf")
 
 def graph_evictions(metrics: Metrics, path_prefix: str):
     columns = ["crypto", "trust", "reputation", "stereotype"]
@@ -251,7 +294,8 @@ def main(args):
     with open(args.metrics_path, "rb") as f:
         metrics = pickle.load(f)
 
-    fns = [graph_utility, graph_utility_scaled, graph_behaviour_state, graph_interactions, graph_evictions]
+    fns = [graph_utility, graph_utility_scaled, graph_behaviour_state,
+           graph_interactions, graph_interactions_utility_hist, graph_evictions]
     fns = [functools.partial(fn, metrics, args.path_prefix) for fn in fns]
 
     with Pool(4) as p:
