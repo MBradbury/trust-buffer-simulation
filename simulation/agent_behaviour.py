@@ -8,15 +8,18 @@ class RandomAgentChooseBehaviour(AgentChooseBehaviour):
     short_name = "Random"
 
     def choose_agent_for_task(self, agent: Agent, capability: Capability) -> Optional[Agent]:
-        return agent.sim.rng.choice([item for item in agent.buffers.crypto if capability in item.agent.capabilities])
+        try:
+            return agent.sim.rng.choice([item for item in agent.buffers.crypto if capability in item.agent.capabilities])
+        except IndexError:
+            return None
 
 class BRSAgentChooseBehaviour(AgentChooseBehaviour):
     short_name = "BRS"
 
     @staticmethod
-    def trust_value(agent: Agent, a: Agent, capability: Capability):
-        t = agent.buffers.find_trust(a, capability)
-        s = agent.buffers.find_stereotype(a, capability)
+    def trust_value(buffers: AgentBuffers, agent: Agent, capability: Capability):
+        t = buffers.find_trust(agent, capability)
+        s = buffers.find_stereotype(agent, capability)
 
         rt, rr, rs = 0, 0, 0
         rtc, rrc, rsc = 0, 0, 0
@@ -25,9 +28,9 @@ class BRSAgentChooseBehaviour(AgentChooseBehaviour):
             rt = t.brs_trust()
             rtc = 1
 
-        for r in agent.buffers.reputation:
+        for r in buffers.reputation:
             for rti in r.trust_items:
-                if rti.agent is a and rti.capability is capability:
+                if rti.agent is agent and rti.capability is capability:
                     rr += rti.brs_trust()
                     rrc += 1
 
@@ -51,8 +54,11 @@ class BRSAgentChooseBehaviour(AgentChooseBehaviour):
             return None
 
         trust_values = {
-            option.agent: self.trust_value(agent, option.agent, capability) for option in options
+            option.agent: self.trust_value(agent.buffers, option.agent, capability) for option in options
         }
         max_trust_value = max(trust_values.values())
 
-        return agent.sim.rng.choice([item for item in options if trust_values[item.agent] >= max_trust_value - 0.1])
+        try:
+            return agent.sim.rng.choice([item for item in options if trust_values[item.agent] >= max_trust_value - 0.1])
+        except IndexError:
+            return None

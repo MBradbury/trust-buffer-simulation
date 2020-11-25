@@ -51,7 +51,7 @@ def main(args):
 
     sim.run(args.max_start_delay)
 
-    sim.metrics.save(sim, args)
+    sim.metrics.save(sim, args, args.path_prefix)
 
 def eviction_strategies():
     return [cls.short_name for cls in EvictionStrategy.__subclasses__()]
@@ -121,6 +121,9 @@ if __name__ == "__main__":
                         help='The behaviour to choose which agent to interact with to perform a task')
     parser.add_argument('--utility-targets', type=UtilityTargets, required=True, choices=list(UtilityTargets),
                         help='Which targets to evaluate utility against')
+
+    parser.add_argument('--path-prefix', type=str, required=False, default="./",
+                        help='The path prefix for output files')
 
     parser.add_argument('--seed', type=int, required=False, default=None,
                         help='The simulation seed')

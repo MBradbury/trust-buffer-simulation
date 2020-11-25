@@ -38,7 +38,7 @@ class Metrics:
     def add_interaction_performed(self, t: float, agent: Agent, capability: Capability):
         self.interaction_performed.append((t, agent.name, capability.name))
 
-    def save(self, sim, args):
+    def save(self, sim, args, path_prefix: str="./"):
         # save information from sim
 
         self.args = args
@@ -62,5 +62,5 @@ class Metrics:
         print("reputation", len(self.evicted_reputation))
         print("stereotype", len(self.evicted_stereotype))
 
-        with open("metrics.pickle", "wb") as f:
+        with open(f"{path_prefix}metrics.pickle", "wb") as f:
             pickle.dump(self, f, protocol=pickle.HIGHEST_PROTOCOL)

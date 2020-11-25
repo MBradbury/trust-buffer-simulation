@@ -115,24 +115,21 @@ class Agent:
         self.log(f"Value of buffers after update {self.buffers.utility(self, capability, targets=[agent])} {capability}")
 
     def choose_agent_for_task(self, capability: Capability):
-        try:
-            item = self.choose.choose_agent_for_task(self, capability)
-            if item is None:
-                return None
-
-            self.sim.es.use_crypto(item)
-
-            self.sim.es.use_trust(self.buffers.find_trust(item.agent, capability))
-
-            for reputation_item in self.buffers.reputation:
-                if any(trust_item.agent is item and trust_item.capability is capability for trust_item in reputation_item.trust_items):
-                    self.sim.es.use_reputation(reputation_item)
-
-            self.sim.es.use_stereotype(self.buffers.find_stereotype(item.agent, capability))
-
-            return item.agent
-        except IndexError:
+        item = self.choose.choose_agent_for_task(self, capability)
+        if item is None:
             return None
+
+        self.sim.es.use_crypto(item)
+
+        self.sim.es.use_trust(self.buffers.find_trust(item.agent, capability))
+
+        for reputation_item in self.buffers.reputation:
+            if any(trust_item.agent is item and trust_item.capability is capability for trust_item in reputation_item.trust_items):
+                self.sim.es.use_reputation(reputation_item)
+
+        self.sim.es.use_stereotype(self.buffers.find_stereotype(item.agent, capability))
+
+        return item.agent
 
     def perform_interaction(self, selected_agent: Agent, capability: Capability):
         # Record the values in the buffers at the time the interaction was initiated
