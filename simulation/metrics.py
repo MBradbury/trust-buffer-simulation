@@ -5,9 +5,11 @@ from simulation.capability import Capability, InteractionObservation
 
 import pickle 
 from pprint import pprint
+from itertools import chain
 
 class Metrics:
     def __init__(self):
+        self.interaction_performed = []
         self.interaction_outcomes = []
         self.utility = []
 
@@ -33,10 +35,16 @@ class Metrics:
     def add_evicted_stereotype(self, t: float, agent: Agent, choice):
         self.evicted_stereotype.append((t, agent.name, choice.basic()))
 
+    def add_interaction_performed(self, t: float, agent: Agent, capability: Capability):
+        self.interaction_performed.append((t, agent.name, capability.name))
+
     def save(self, sim, args):
         # save information from sim
 
         self.args = args
+
+        self.agent_names = list(sorted([agent.name for agent in sim.agents]))
+        self.capability_names = list(sorted(set(chain.from_iterable([capability.name for capability in agent.capabilities] for agent in sim.agents))))
 
         self.behaviour_changes = {
             (agent.name, capability.name): behaviour.state_history
@@ -48,13 +56,6 @@ class Metrics:
             agent.name: agent.buffers.max_utility()
             for agent in sim.agents
         }
-
-        pprint(self.max_utilities)
-
-        #pprint(self.interaction_outcomes)
-        #pprint(self.utility)
-
-        #pprint(self.behaviour_changes)
 
         print("crypto", len(self.evicted_crypto))
         print("trust", len(self.evicted_trust))
