@@ -199,7 +199,7 @@ def graph_interactions_utility_hist(metrics: Metrics, path_prefix: str):
     fig = plt.figure()
     ax = fig.gca()
 
-    ax.hist([correct, incorrect, incorrect_imp], bins, density=True, histtype='bar', stacked=True,
+    ax.hist([correct, incorrect, incorrect_imp], bins, histtype='bar', stacked=True,
             label=[f"Correct ({len(correct)})", f"Incorrect ({len(incorrect)})", f"Incorrect (Imp) ({len(incorrect_imp)})"])
     ax.legend()
 
@@ -265,6 +265,40 @@ def graph_evictions(metrics: Metrics, path_prefix: str):
 
     savefig(fig, f"{path_prefix}evictions.pdf")
 
+def graph_interactions_performed(metrics: Metrics, path_prefix: str):
+
+    all_interactions = {
+        (agent, capability): [t for (t, a, c) in metrics.interaction_performed if a == agent and c == capability]
+        for agent in metrics.agent_names
+        for capability in metrics.capability_names
+    }
+
+    fig, axs = plt.subplots(nrows=len(metrics.agent_names), ncols=len(metrics.capability_names), sharex=True, squeeze=False, figsize=(18,30))
+
+    for (agent, col) in itertools.product(metrics.agent_names, metrics.capability_names):
+        try:
+            interactions = all_interactions[(agent, col)]
+        except KeyError:
+            # Skip when there are no evictions
+            continue
+
+        # Skip when there were no evictions
+        if not interactions:
+            continue
+
+        ax = axs[metrics.agent_names.index(agent), metrics.capability_names.index(col)]
+
+        bins = np.arange(min(interactions), max(interactions), 5)
+
+        ax.hist(interactions, bins, histtype='bar')
+
+        ax.title.set_text(f"{agent} {col}")
+
+        ax.tick_params(axis='y', labelsize="small")
+
+    fig.subplots_adjust(hspace=0.35)
+
+    savefig(fig, f"{path_prefix}interactions-performed.pdf")
 
 def check_fonts(path: str):
     r = subprocess.run(f"pdffonts {path}",
@@ -295,7 +329,8 @@ def main(args):
         metrics = pickle.load(f)
 
     fns = [graph_utility, graph_utility_scaled, graph_behaviour_state,
-           graph_interactions, graph_interactions_utility_hist, graph_evictions]
+           graph_interactions, graph_interactions_utility_hist, graph_evictions,
+           graph_interactions_performed]
     fns = [functools.partial(fn, metrics, args.path_prefix) for fn in fns]
 
     with Pool(4) as p:
