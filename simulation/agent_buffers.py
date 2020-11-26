@@ -41,7 +41,7 @@ class TrustItem:
             return self.correct_count / float(self.correct_count + self.incorrect_count)
 
     def basic(self):
-        return (self.agent.name, self.capability.name, self.correct_count, self.incorrect_count)
+        return (self.agent.name, self.capability.name)
 
 
 @dataclass(repr=False)
@@ -75,6 +75,14 @@ class AgentBuffers:
         self.trust = BoundedList(length=trust_bux_max)
         self.reputation = BoundedList(length=reputation_bux_max)
         self.stereotype = BoundedList(length=stereotype_bux_max)
+
+    def basic(self) -> dict:
+        return {
+            "crypto": [x.basic() for x in self.crypto],
+            "trust": [x.basic() for x in self.trust],
+            "reputation": [x.basic() for x in self.reputation],
+            "stereotype": [x.basic() for x in self.stereotype],
+        }
 
     def find_crypto(self, agent) -> CryptoItem:
         for item in self.crypto:
@@ -290,7 +298,7 @@ class AgentBuffers:
         if not agents:
             return float("NaN")
         else:
-            return sum(Uc(a) * (Ud(a) + Up(a) + Us(a)) * 1.0/3.0 for a in agents) / len(agents)
+            return sum(Uc(a) * (1 + Ud(a) + Up(a) + Us(a)) * 1.0/4.0 for a in agents) / len(agents)
 
     # TODO: could this be done per capability?
     def max_utility(self):

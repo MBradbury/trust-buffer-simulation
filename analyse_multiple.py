@@ -28,7 +28,7 @@ plt.rcParams['font.size'] = 12
 def graph_utility_summary(all_metrics: Dict[str, Metrics], path_prefix: str):
 
     all_utilities = {
-        path.split("-")[0]: [utility for (t, source, capability, utility, target, outcome) in metrics.utility if not np.isnan(utility)]
+        path.split("-")[0]: [b.utility for b in metrics.buffers if not np.isnan(b.utility)]
         for (path, metrics) in all_metrics.items()
     }
 
@@ -63,7 +63,7 @@ def graph_utility_summary_grouped_es(all_metrics: Dict[str, Metrics], path_prefi
         print(behaviour, size)
 
         all_utilities = {
-            path[1]: [utility for (t, source, capability, utility, target, outcome) in metrics.utility if not np.isnan(utility)]
+            path[1]: [b.utility for b in metrics.buffers if not np.isnan(b.utility)]
             for (path, metrics) in all_metrics.items()
             if path[0] == behaviour
             and path[-1] == size

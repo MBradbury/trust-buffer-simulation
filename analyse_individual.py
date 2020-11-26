@@ -26,14 +26,14 @@ def graph_utility(metrics: Metrics, path_prefix: str):
     fig = plt.figure()
     ax = fig.gca()
 
-    sources_utilities = {(src, cap) for (t, src, cap, util, target, outcome) in metrics.utility}
+    sources_utilities = {(b.source, b.capability) for b in metrics.buffers}
 
     grouped_utility = {
         (asrc, acap): [
-            (t, util)
+            (b.t, b.utility)
 
-            for (t, src, cap, util, target, outcome) in metrics.utility
-            if asrc == src and acap == cap
+            for b in metrics.buffers
+            if asrc == b.source and acap == b.capability
         ]
         for (asrc, acap) in sources_utilities
     }
@@ -59,14 +59,14 @@ def graph_utility_scaled(metrics: Metrics, path_prefix: str):
     fig = plt.figure()
     ax = fig.gca()
 
-    sources_utilities = {(src, cap) for (t, src, cap, util, target, outcome) in metrics.utility}
+    sources_utilities = {(b.source, b.capability) for b in metrics.buffers}
 
     grouped_utility = {
         (asrc, acap): [
-            (t, util / metrics.max_utilities[asrc])
+            (b.t, b.utility / metrics.max_utilities[asrc])
 
-            for (t, src, cap, util, target, outcome) in metrics.utility
-            if asrc == src and acap == cap
+            for b in metrics.buffers
+            if asrc == b.source and acap == b.capability
         ]
         for (asrc, acap) in sources_utilities
     }
@@ -123,14 +123,14 @@ def graph_behaviour_state(metrics: Metrics, path_prefix: str):
     savefig(fig, f"{path_prefix}behaviour_state.pdf")
 
 def graph_interactions(metrics: Metrics, path_prefix: str):
-    keys = {(target, capability) for (t, source, capability, utility, target, outcome) in metrics.utility}
+    keys = {(b.target, b.capability) for b in metrics.buffers}
 
     all_interactions = {
         (target, capability): [
-            (ut, f"{uoutcome.name} (Imp)" if np.isnan(uutility) else uoutcome.name)
+            (b.t, f"{b.outcome.name} (Imp)" if np.isnan(b.utility) else b.outcome.name)
 
-            for (ut, usource, ucapability, uutility, utarget, uoutcome) in metrics.utility
-            if utarget == target and ucapability == capability
+            for b in metrics.buffers
+            if b.target == target and b.capability == capability
         ]
         for (target, capability) in keys
     }
@@ -174,26 +174,26 @@ def graph_interactions(metrics: Metrics, path_prefix: str):
 def graph_interactions_utility_hist(metrics: Metrics, path_prefix: str):
 
     correct = [
-        utility
-        for (t, source, capability, utility, target, outcome)
-        in metrics.utility
-        if outcome == InteractionObservation.Correct
+        b.utility
+        for b
+        in metrics.buffers
+        if b.outcome == InteractionObservation.Correct
     ]
 
     incorrect = [
-        utility
-        for (t, source, capability, utility, target, outcome)
-        in metrics.utility
-        if outcome == InteractionObservation.Incorrect
-        if not np.isnan(utility)
+        b.utility
+        for b
+        in metrics.buffers
+        if b.outcome == InteractionObservation.Incorrect
+        if not np.isnan(b.utility)
     ]
 
     incorrect_imp = [
-        utility
-        for (t, source, capability, utility, target, outcome)
-        in metrics.utility
-        if outcome == InteractionObservation.Incorrect
-        if np.isnan(utility)
+        b.utility
+        for b
+        in metrics.buffers
+        if b.outcome == InteractionObservation.Incorrect
+        if np.isnan(b.utility)
     ]
 
     bins = np.arange(0, 1, 0.02)

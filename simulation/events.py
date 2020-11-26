@@ -102,7 +102,6 @@ class AgentTaskInteraction(BaseEvent):
             if agent is not self.source
         }
         self.log(sim, f"Outcomes|{outcomes}")
-        sim.metrics.add_interaction_outcomes(sim.current_time, self.source, self.capability, outcomes)
 
         # Who are we interested in evaluating the utility of the buffers for?
         if sim.utility_targets == UtilityTargets.All:
@@ -115,7 +114,7 @@ class AgentTaskInteraction(BaseEvent):
         utility = self.buffers.utility(self.source, self.capability, targets=utility_targets)
         self.log(sim, f"Value of buffers {utility} {self.capability}")
 
-        sim.metrics.add_buffer_evaluation(sim.current_time, self.source, self.capability, utility, self.target, outcome)
+        sim.metrics.add_buffer_evaluation(sim.current_time, self.source, self.capability, outcomes, self.buffers.basic(), utility, self.target, outcome)
 
         # Update source's interaction history
         self.source.update_trust_history(self.target, self.capability, outcome)

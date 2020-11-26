@@ -6,25 +6,36 @@ from simulation.capability import Capability, InteractionObservation
 import pickle 
 from pprint import pprint
 from itertools import chain
+from dataclasses import dataclass
+
+@dataclass
+class BufferEvaluation:
+    t: float
+    source: str
+    capability: str
+    outcomes: dict
+    buffers: dict
+    utility: float
+    target: str
+    outcome: InteractionObservation
 
 class Metrics:
     def __init__(self):
         self.interaction_performed = []
-        self.interaction_outcomes = []
-        self.utility = []
+        self.buffers = []
 
         self.evicted_crypto = []
         self.evicted_trust = []
         self.evicted_reputation = []
         self.evicted_stereotype = []
 
-    def add_interaction_outcomes(self, t: float, source: Agent, capability: Capability, outcomes: dict):
+    def add_buffer_evaluation(self, t: float,
+                              source: Agent, capability: Capability,
+                              outcomes: dict, buffers, utility: float,
+                              target: Agent, outcome: InteractionObservation):
         pickleable_outcomes = {agent.name: outcome for (agent, outcome) in outcomes.items()}
 
-        self.interaction_outcomes.append((t, source.name, capability.name, pickleable_outcomes))
-
-    def add_buffer_evaluation(self, t: float, source: Agent, capability: Capability, utility: float, target: Agent, outcome: InteractionObservation):
-        self.utility.append((t, source.name, capability.name, utility, target.name, outcome))
+        self.buffers.append(BufferEvaluation(t, source.name, capability.name, pickleable_outcomes, buffers, utility, target.name, outcome))
 
     def add_evicted_crypto(self, t: float, agent: Agent, choice):
         self.evicted_crypto.append((t, agent.name, choice.basic()))

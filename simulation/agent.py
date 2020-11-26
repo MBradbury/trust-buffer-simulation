@@ -25,6 +25,12 @@ class Agent:
 
         self.sim = None
 
+    def set_sim(self, sim):
+        self.sim = sim
+
+        for (capability, behaviour) in sorted(self.capability_behaviour.items(), key=lambda x: x[0].name):
+            behaviour.individual_seed = sim.rng.getrandbits(32)
+
     def next_trust_dissemination_period(self, rng: random.Random) -> float:
         return rng.expovariate(1.0 / self.trust_dissem_period)
 

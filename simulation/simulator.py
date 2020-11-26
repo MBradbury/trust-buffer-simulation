@@ -21,7 +21,7 @@ class Simulator:
 
         self.agents = agents
         for agent in self.agents:
-            agent.sim = self
+            agent.set_sim(self)
 
         self.es = escls(self)
 

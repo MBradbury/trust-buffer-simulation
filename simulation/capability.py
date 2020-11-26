@@ -22,8 +22,17 @@ class CapabilityBehaviour:
 
         self.state_history = []
 
+        # When many similar capabilities are being used, it is quite often
+        # the case that they will be in the same state. This means agent
+        # capabilities will have the same results as each other.
+        # This can lead to bad cases, for example, where VeryGood behaviours
+        # all fail at the same time.
+        # To prevent this synchronisation, each behaviour is given their own
+        # different initial seed to mix with the seed provided for an interaction.
+        self.individual_seed = 0
+
     def next_interaction(self, seed: int, t: float):
-        (x, state_sequence) = self.hmm.sample(1, random_state=seed)
+        (x, state_sequence) = self.hmm.sample(1, random_state=seed ^ self.individual_seed)
 
         assert len(state_sequence) == 1
         assert len(x) == 1
@@ -42,7 +51,7 @@ class CapabilityBehaviour:
         return self.observations[x[0][0]]
 
     def peek_interaction(self, seed: int):
-        (x, state_sequence) = self.hmm.sample(1, random_state=seed)
+        (x, state_sequence) = self.hmm.sample(1, random_state=seed ^ self.individual_seed)
 
         assert len(state_sequence) == 1
         assert len(x) == 1
