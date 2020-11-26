@@ -343,7 +343,7 @@ class AgentBuffers:
             else:
                 return 0
 
-        return sum((Ud(a) + Up(a) + Us(a)) * 1.0/3.0 for a in selected_agents) / len(agents)
+        return sum((1 + Ud(a) + Up(a) + Us(a)) * 1.0/4.0 for a in selected_agents) / len(agents)
 
     def log(self, message: str):
         self.agent.log(message)
