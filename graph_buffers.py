@@ -53,33 +53,40 @@ def graph_buffer(metrics: Metrics, path_prefix: str, n, total_n, tb):
         "stereotype": metrics.args.max_stereotype_buf,
     }
 
+    buffer_colours = {
+        "crypto": "darkorchid1",
+        "trust": "darkkhaki",
+        "reputation": "darkseagreen3",
+        "stereotype": "darkslategray2",
+    }
+
     for (name, items) in tb.buffers.items():
 
         # The items will be shorter than their maximum capacity, so lets add it in now:
         true_size = buffer_sizes[name]
 
         for i in range(true_size):
-            p.add_node(f"{name} {i}", shape="square")
+            p.add_node(f"{name} {i}", shape="square", color=buffer_colours[name], penwidth=3)
 
         p.add_subgraph([f"{name} {i}" for i in range(true_size)], name=f"cluster_{name}")
 
         if name == "crypto":
             for (i, item) in enumerate(items):
                 for capability in metrics.capability_names:
-                    p.add_edge(f"{name} {i}", f"{item[0]} {capability}", color='coral3', penwidth=2)
+                    p.add_edge(f"{name} {i}", f"{item[0]} {capability}", color=buffer_colours[name], penwidth=3)
 
         elif name == "trust":
             for (i, item) in enumerate(items):
-                p.add_edge(f"{name} {i}", f"{item[0]} {item[1]}", color='darkkhaki', penwidth=2)
+                p.add_edge(f"{name} {i}", f"{item[0]} {item[1]}", color=buffer_colours[name], penwidth=3)
 
         elif name == "stereotype":
             for (i, item) in enumerate(items):
-                p.add_edge(f"{name} {i}", f"{item[0]} {item[1]}", color='darkseagreen3', penwidth=2)
+                p.add_edge(f"{name} {i}", f"{item[0]} {item[1]}", color=buffer_colours[name], penwidth=3)
 
         elif name == "reputation":
             for (i, (a, alinks)) in enumerate(items):
                 for alink in alinks:
-                    p.add_edge(f"{name} {i}", f"{alink[0]} {alink[1]}", color='darkslategray2', penwidth=2)
+                    p.add_edge(f"{name} {i}", f"{alink[0]} {alink[1]}", color=buffer_colours[name], penwidth=3)
 
         else:
             pass
