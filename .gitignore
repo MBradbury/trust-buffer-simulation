@@ -2,3 +2,4 @@
 *.txt
 *.pickle
 __pycache__
+graphs.zip
