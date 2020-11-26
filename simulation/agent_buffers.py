@@ -122,43 +122,47 @@ class AgentBuffers:
 
         return result
 
-    def any_buffer_has_agent(self, agent: Agent, buffers="CTRS") -> bool:
+    def buffer_has_agent_count(self, agent: Agent, buffers="CTRS") -> int:
+        result = 0
+
         if "C" in buffers:
             if self.find_crypto(agent):
-                return True
+                result += 1
 
         if "T" in buffers:
             if self.find_trust_by_agent(agent):
-                return True
+                result += 1
 
         if "R" in buffers:
             if self.find_reputation(agent):
-                return True
+                result += 1
 
         if "S" in buffers:
             if self.find_stereotype_by_agent(agent):
-                return True
+                result += 1
 
-        return False
+        return result
 
-    def any_buffer_has_agent_capability(self, agent: Agent, capability: Capability, buffers="CTRS") -> bool:
+    def buffer_has_agent_capability_count(self, agent: Agent, capability: Capability, buffers="CTRS") -> int:
+        result = 0
+
         if "C" in buffers:
             if self.find_crypto(agent):
-                return True
+                result += 1
 
         if "T" in buffers:
             if self.find_trust(agent, capability):
-                return True
+                result += 1
 
         if "R" in buffers:
             if self.find_reputation(agent):
-                return True
+                result += 1
 
         if "S" in buffers:
             if self.find_stereotype(agent, capability):
-                return True
+                result += 1
 
-        return False
+        return result
 
 
     def add_crypto(self, es: EvictionStrategy, item: CryptoItem):

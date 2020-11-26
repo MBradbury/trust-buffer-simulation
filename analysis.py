@@ -3,6 +3,9 @@ from __future__ import annotations
 import subprocess
 
 def check_fonts(path: str):
+	# Not all papers like having type 3 fonts, 
+	# so check if there are any
+
     r = subprocess.run(f"pdffonts {path}",
         shell=True,
         check=True,
