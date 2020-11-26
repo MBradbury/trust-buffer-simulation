@@ -17,13 +17,6 @@ from pygraphviz import *
 def graph_buffer(metrics: Metrics, path_prefix: str, n, total_n, tb):
     print(f"{n}/{total_n}")
 
-    height = 15
-    width = 15
-    sep = 1.3
-
-
-    #print(outcomes)
-
     p = AGraph(label=f"({tb.source} {tb.capability}) generating task, utility={tb.utility}")
 
     # Add agents and capabilities
@@ -65,51 +58,8 @@ def graph_buffer(metrics: Metrics, path_prefix: str, n, total_n, tb):
         # The items will be shorter than their maximum capacity, so lets add it in now:
         true_size = buffer_sizes[name]
 
-        # Manually positioning the nodes like this doesn't work well
-        """
-        if name == "crypto":
-            required_width = true_size * sep
-            pad = (width - required_width) / 2
-
-            def px(i):
-                return pad + i*sep
-
-            def py(i):
-                return height
-
-        elif name == "reputation":
-            required_width = true_size * sep
-            pad = (width - required_width) / 2
-
-            def px(i):
-                return pad + i*sep
-
-            def py(i):
-                return 0
-
-        elif name == "trust":
-            required_height = true_size * sep
-            pad = (height - required_height) / 2
-
-            def px(i):
-                return width
-
-            def py(i):
-                return pad + i*sep
-
-        elif name == "stereotype":
-            required_height = true_size * sep
-            pad = (height - required_height) / 2
-
-            def px(i):
-                return 0
-
-            def py(i):
-                return pad + i*sep
-        """
-
         for i in range(true_size):
-            p.add_node(f"{name} {i}", shape="square")#, pos=f"{px(i)},{py(i)}!")
+            p.add_node(f"{name} {i}", shape="square")
 
         p.add_subgraph([f"{name} {i}" for i in range(true_size)], name=f"cluster_{name}")
 
@@ -140,10 +90,6 @@ def graph_buffer(metrics: Metrics, path_prefix: str, n, total_n, tb):
     #p.layout("neato")
     p.draw(f'{path_prefix}Topology-{str(n).zfill(pad)}-{tb.t}.pdf')
 
-def graph_buffers(metrics: Metrics, path_prefix: str):
-    for (n, b) in enumerate(metrics.buffers):
-        graph_buffer(metrics, path_prefix, n, len(metrics.buffers), b)
-
 def call(fn):
     fn()
 
@@ -151,8 +97,10 @@ def main(args):
     with open(args.metrics_path, "rb") as f:
         metrics = pickle.load(f)
 
-    fns = [graph_buffers]
-    fns = [functools.partial(fn, metrics, args.path_prefix) for fn in fns]
+    fns = [
+        functools.partial(graph_buffer, metrics, args.path_prefix, n, len(metrics.buffers), b)
+        for (n, b) in enumerate(metrics.buffers)
+    ]
 
     with Pool(4) as p:
         p.map(call, fns)
