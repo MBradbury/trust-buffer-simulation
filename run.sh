@@ -2,7 +2,7 @@
 
 BEHAVIOURS=("GoodBehaviour" "UnstableBehaviour" "AlwaysGoodBehaviour" "VeryGoodBehaviour")
 
-ESs=("LRU" "Random" "FIFO" "MRU" "Chen2016" "FiveBand" "NotInOther")
+ESs=("LRU" "Random" "FIFO" "MRU" "Chen2016" "FiveBand" "NotInOther" "MinNotInOther")
 
 rm -f *.pdf
 

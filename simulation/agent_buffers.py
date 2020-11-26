@@ -106,6 +106,24 @@ class AgentBuffers:
 
         return None
 
+    def find_reputation_contents_by_agent(self, agent: Agent) -> List[ReputationItem]:
+        result = []
+
+        for item in self.reputation:
+            if any(trust_item.agent is agent for trust_item in item.trust_items):
+                result.append(item)
+
+        return result
+
+    def find_reputation_contents(self, agent: Agent, capability: Capability) -> List[ReputationItem]:
+        result = []
+
+        for item in self.reputation:
+            if any(trust_item.agent is agent and trust_item.capability is capability for trust_item in item.trust_items):
+                result.append(item)
+
+        return result
+
     def find_stereotype(self, agent: Agent, capability: Capability) -> StereotypeItem:
         for item in self.stereotype:
             if item.agent is agent and item.capability is capability:
@@ -134,7 +152,7 @@ class AgentBuffers:
                 result += 1
 
         if "R" in buffers:
-            if self.find_reputation(agent):
+            if self.find_reputation_contents_by_agent(agent):
                 result += 1
 
         if "S" in buffers:
@@ -155,7 +173,7 @@ class AgentBuffers:
                 result += 1
 
         if "R" in buffers:
-            if self.find_reputation(agent):
+            if self.find_reputation_contents(agent, capability):
                 result += 1
 
         if "S" in buffers:
@@ -243,15 +261,12 @@ class AgentBuffers:
             return 1 if item.total_count() > 0 else 0
 
         def Up(other: Agent):
-            for agent_via in sim.agents:
-                item = self.find_reputation(agent_via)
-                if item is None:
-                    continue
-
+            items = self.find_reputation_contents(other, capability)
+            for item in items:
                 for trust_item in item.trust_items:
-                    if trust_item.total_count() > 0:
-                        return 1
-            
+                    if trust_item.agent is other and trust_item.capability is capability:
+                        if trust_item.total_count() > 0:
+                            return 1
             return 0
 
         def Us(other: Agent):

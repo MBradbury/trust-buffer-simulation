@@ -223,7 +223,7 @@ class NotInOtherEvictionStrategy(EvictionStrategy):
         choices = [
             item
             for item in items
-            if buffers.buffer_has_agent_count(item.agent, "CTS") == 0
+            if all(buffers.buffer_has_agent_capability_count(trust_item.agent, trust_item.capability, "CTS") == 0 for trust_item in item.trust_items)
         ]
         if choices:
             return self._lru(choices)
@@ -292,7 +292,7 @@ class MinNotInOtherEvictionStrategy(EvictionStrategy):
             return None
 
         choices = [
-            (item, buffers.buffer_has_agent_count(item.agent, "CTS"))
+            (item, sum(buffers.buffer_has_agent_capability_count(trust_item.agent, trust_item.capability, "CTS") for trust_item in item.trust_items))
             for item in items
         ]
         min_count = min(choices, key=lambda x: x[1])
