@@ -110,7 +110,8 @@ class Agent:
             trust_item = self.buffers.find_trust(agent, capability)
             assert trust_item is new_trust_item
 
-        trust_item.record(outcome)
+        if trust_item is not None:
+            trust_item.record(outcome)
 
         self.log(f"Value of buffers after update {self.buffers.utility(self, capability, targets=[agent])} {capability}")
 
