@@ -94,6 +94,6 @@ done
 
 echo "Analysing multiple..."
 
-./analyse_multiple.py $BE_PRODUCT
+echo $BE_PRODUCT | xargs ./analyse_multiple.py
 
 echo "Done!"
