@@ -90,6 +90,15 @@ class AgentBuffers:
 
         return None
 
+    def find_trust_by_agent(self, agent: Agent) -> List[TrustItem]:
+        result = []
+
+        for item in self.trust:
+            if item.agent is agent:
+                result.append(item)
+
+        return result
+
     def find_reputation(self, agent: Agent) -> ReputationItem:
         for item in self.reputation:
             if item.agent is agent:
@@ -103,6 +112,54 @@ class AgentBuffers:
                 return item
 
         return None
+
+    def find_stereotype_by_agent(self, agent: Agent) -> List[StereotypeItem]:
+        result = []
+
+        for item in self.stereotype:
+            if item.agent is agent:
+                result.append(item)
+
+        return result
+
+    def any_buffer_has_agent(self, agent: Agent, buffers="CTRS") -> bool:
+        if "C" in buffers:
+            if self.find_crypto(agent):
+                return True
+
+        if "T" in buffers:
+            if self.find_trust_by_agent(agent):
+                return True
+
+        if "R" in buffers:
+            if self.find_reputation(agent):
+                return True
+
+        if "S" in buffers:
+            if self.find_stereotype_by_agent(agent):
+                return True
+
+        return False
+
+    def any_buffer_has_agent_capability(self, agent: Agent, capability: Capability, buffers="CTRS") -> bool:
+        if "C" in buffers:
+            if self.find_crypto(agent):
+                return True
+
+        if "T" in buffers:
+            if self.find_trust(agent, capability):
+                return True
+
+        if "R" in buffers:
+            if self.find_reputation(agent):
+                return True
+
+        if "S" in buffers:
+            if self.find_stereotype(agent, capability):
+                return True
+
+        return False
+
 
     def add_crypto(self, es: EvictionStrategy, item: CryptoItem):
         try:

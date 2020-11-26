@@ -1,10 +1,8 @@
 #!/bin/bash
 
 BEHAVIOURS=("GoodBehaviour" "UnstableBehaviour" "AlwaysGoodBehaviour" "VeryGoodBehaviour")
-#BEHAVIOURS="AlwaysGoodBehaviour GoodBehaviour"
 
-ESs=("LRU" "Random" "FIFO" "MRU" "Chen2016" "FiveBand")
-#ESs="Holistic"
+ESs=("LRU" "Random" "FIFO" "MRU" "Chen2016" "FiveBand" "NotInOther")
 
 rm -f *.pdf
 
@@ -24,7 +22,7 @@ do
 	echo "Running behaviour $BEHAVIOUR"
 
 	rm -rf "$BEHAVIOUR"
-	mkdir "$BEHAVIOUR"
+	mkdir -p "$BEHAVIOUR"
 
 	# No evictions
 	for ES in "${ESs[@]}"
