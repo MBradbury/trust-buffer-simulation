@@ -97,6 +97,95 @@ def graph_buffer(metrics: Metrics, path_prefix: str, n, total_n, tb):
     #p.layout("neato")
     p.draw(f'{path_prefix}Topology-{str(n).zfill(pad)}-{tb.t}.pdf')
 
+
+def graph_buffer_direct(metrics: Metrics, path_prefix: str, n, total_n, tb):
+    print(f"{n}/{total_n}")
+
+    p = AGraph(label=f"({tb.source} {tb.capability}) generating task, utility={tb.utility}")
+
+    # Add buffer nodes
+
+    buffer_sizes = {
+        "crypto": metrics.args.max_crypto_buf,
+        "trust": metrics.args.max_trust_buf,
+        "reputation": metrics.args.max_reputation_buf,
+        "stereotype": metrics.args.max_stereotype_buf,
+    }
+
+    buffer_colours = {
+        "crypto": "darkorchid1",
+        "trust": "darkkhaki",
+        "reputation": "darkseagreen3",
+        "stereotype": "darkslategray2",
+    }
+
+    def edge_colour(x):
+        agent, capability = x
+
+        if capability == tb.capability:
+            if tb.outcomes[agent] == InteractionObservation.Incorrect:
+                return "red"
+            elif tb.outcomes[agent] == InteractionObservation.Correct:
+                return "green"
+            else:
+                return None
+
+        else:
+            if agent == tb.source:
+                return "cornflowerblue"
+            else:
+                return "grey"
+
+    for (name, items) in tb.buffers.items():
+
+        # The items will be shorter than their maximum capacity, so lets add it in now:
+        true_size = buffer_sizes[name]
+
+        for i in range(true_size):
+            p.add_node(f"{name} {i}", shape="square", color=buffer_colours[name], penwidth=3)
+
+        p.add_subgraph([f"{name} {i}" for i in range(true_size)], name=f"cluster_{name}")
+
+        if name == "crypto":
+            items = [(i, (item[0], capability)) for (i, item) in enumerate(items) for capability in metrics.capability_names]
+        elif name == "reputation":
+            items = [(i, uitem) for (i, (usrc, uitems)) in enumerate(items) for uitem in uitems]
+        else:
+            items = list(enumerate(items))
+
+        for (nameb, itemsb) in tb.buffers.items():
+            if name == nameb:
+                continue
+
+            # Only want links with crypto
+            if nameb != "crypto":
+                continue
+
+            if nameb == "crypto":
+                itemsb = [(i, (item[0], capability)) for (i, item) in enumerate(itemsb) for capability in metrics.capability_names]
+            elif nameb == "reputation":
+                itemsb = [(i, uitem) for (i, (usrc, uitems)) in enumerate(itemsb) for uitem in uitems]
+            else:
+                itemsb = list(enumerate(itemsb))
+
+            for (a, itema) in items:
+                for (b, itemb) in itemsb:
+
+                    assert itema[0][0] == "A"
+                    assert itema[1][0] == "C"
+
+                    assert itemb[0][0] == "A"
+                    assert itemb[1][0] == "C"
+
+                    if itema == itemb:
+                        p.add_edge(f"{name} {a}", f"{nameb} {b}", label=f"{itema[0]} {itema[1]}", color=edge_colour(itema), penwidth=2)
+
+    pad = math.ceil(math.log10(total_n))
+
+    p.layout("sfdp")
+    #p.layout("neato")
+    p.draw(f'{path_prefix}Topology-{str(n).zfill(pad)}-{tb.t}.pdf')
+
 def call(fn):
     fn()
 
@@ -105,7 +194,7 @@ def main(args):
         metrics = pickle.load(f)
 
     fns = [
-        functools.partial(graph_buffer, metrics, args.path_prefix, n, len(metrics.buffers), b)
+        functools.partial(graph_buffer_direct, metrics, args.path_prefix, n, len(metrics.buffers), b)
         for (n, b) in enumerate(metrics.buffers)
     ]
 
