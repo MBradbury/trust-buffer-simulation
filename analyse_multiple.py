@@ -32,12 +32,12 @@ def graph_utility_summary(all_metrics: Dict[str, Metrics], path_prefix: str):
         for (path, metrics) in all_metrics.items()
     }
 
-    #pprint(all_utilities)
+    labels, Xs = zip(*sorted(all_utilities.items(), key=lambda x: x[0]))
 
     fig = plt.figure()
     ax = fig.gca()
 
-    ax.boxplot(all_utilities.values(), labels=all_utilities.keys())
+    ax.boxplot(Xs, labels=labels)
 
     #ax.set_ylim(0, 1)
     ax.set_ylabel('Utility (\\%)')
@@ -51,8 +51,8 @@ def graph_utility_summary_grouped_es(all_metrics: Dict[str, Metrics], path_prefi
 
     print(len(all_metrics))
 
-    behaviours = {path[0] for path in all_metrics.keys()}
-    sizes = {path[-1] for path in all_metrics.keys()}
+    behaviours = list(sorted({path[0] for path in all_metrics.keys()}))
+    sizes = list(sorted({path[-1] for path in all_metrics.keys()}))
 
     print(behaviours)
     print(sizes)
@@ -69,10 +69,12 @@ def graph_utility_summary_grouped_es(all_metrics: Dict[str, Metrics], path_prefi
             and path[-1] == size
         }
 
+        labels, Xs = zip(*sorted(all_utilities.items(), key=lambda x: x[0]))
+
         fig = plt.figure()
         ax = fig.gca()
 
-        ax.boxplot(all_utilities.values(), labels=all_utilities.keys())
+        ax.boxplot(Xs, labels=labels)
 
         ax.set_ylim(0, 1)
         ax.set_ylabel('Utility (\\%)')
