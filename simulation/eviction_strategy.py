@@ -72,6 +72,21 @@ class LRUEvictionStrategy(EvictionStrategy):
 
         item.eviction_data = self.sim.current_time
 
+class LRU2EvictionStrategy(EvictionStrategy):
+    short_name = "LRU2"
+
+    def add_common(self, item):
+        item.eviction_data = (self.sim.current_time, self.sim.current_time)
+
+    def choose_common(self, items: List, buffers: AgentBuffers, new_item):
+        return min(items, key=lambda x: x.eviction_data[1])
+
+    def use_common(self, item: List):
+        if item is None:
+            return
+
+        item.eviction_data = (self.sim.current_time, item.eviction_data[0])
+
 class MRUEvictionStrategy(EvictionStrategy):
     short_name = "MRU"
 
