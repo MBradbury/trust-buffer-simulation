@@ -58,16 +58,18 @@ class Agent:
         if any(self.buffers.find_stereotype(agent, capability) is None for capability in self.capabilities):
             self.request_stereotype(agent)
 
+        trust_items = copy.copy(agent.buffers.trust)
+
         # Record reputation information
         reputation_item = self.buffers.find_reputation(agent)
         if reputation_item is None:
             # Try to add this new item
-            new_reputation_item = ReputationItem(agent, copy.copy(agent.buffers.trust))
+            new_reputation_item = ReputationItem(agent, trust_items)
 
             self.buffers.add_reputation(self.sim.es, new_reputation_item)
         else:
             # Update the item
-            reputation_item.trust_items = copy.copy(agent.buffers.trust)
+            reputation_item.trust_items = trust_items
 
 
     def receive_crypto_information(self, agent: Agent):
