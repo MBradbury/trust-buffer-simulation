@@ -271,10 +271,8 @@ class AgentBuffers:
         def Up(other: Agent):
             items = self.find_reputation_contents(other, capability)
             for item in items:
-                for trust_item in item.trust_items:
-                    if trust_item.agent is other and trust_item.capability is capability:
-                        if trust_item.total_count() > 0:
-                            return 1
+                if any(trust_item.total_count() > 0 for trust_item in item.trust_items):
+                    return 1
             return 0
 
         def Us(other: Agent):
@@ -291,14 +289,14 @@ class AgentBuffers:
             if a is not agent and capability in a.capabilities
         ]
 
-        print(f"#Evaluating utility for {agent}:")
+        self.log(f"#Evaluating utility for {agent}:")
         for a in agents:
-            print(f"#\t{a}: Uc={Uc(a)} Ud={Ud(a)} Up={Up(a)} Us={Us(a)}")
+            self.log(f"#\t{a}: Uc={Uc(a)} Ud={Ud(a)} Up={Up(a)} Us={Us(a)}")
 
         if not agents:
             return float("NaN")
         else:
-            return sum(Uc(a) * (1 + Ud(a) + Up(a) + Us(a)) * 1.0/4.0 for a in agents) / len(agents)
+            return sum(Uc(a) * (1 + Ud(a) + Up(a) + Us(a)) * (1.0/4.0) for a in agents) / len(agents)
 
     # TODO: could this be done per capability?
     def max_utility(self):

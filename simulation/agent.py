@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import copy
-from itertools import chain
-from typing import Optional
 
 from simulation.agent_behaviour import *
 from simulation.agent_buffers import *

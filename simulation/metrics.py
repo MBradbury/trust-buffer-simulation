@@ -3,8 +3,7 @@ from __future__ import annotations
 from simulation.agent import Agent
 from simulation.capability import Capability, InteractionObservation
 
-import pickle 
-from pprint import pprint
+import pickle
 from itertools import chain
 from dataclasses import dataclass
 
@@ -55,7 +54,10 @@ class Metrics:
         self.args = args
 
         self.agent_names = list(sorted([agent.name for agent in sim.agents]))
-        self.capability_names = list(sorted(set(chain.from_iterable([capability.name for capability in agent.capabilities] for agent in sim.agents))))
+        self.capability_names = list(sorted(set(chain.from_iterable(
+            [capability.name for capability in agent.capabilities]
+            for agent in sim.agents
+        ))))
 
         self.behaviour_changes = {
             (agent.name, capability.name): behaviour.state_history
