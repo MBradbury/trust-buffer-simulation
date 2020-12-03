@@ -55,6 +55,8 @@ def graph_utility(metrics: Metrics, path_prefix: str):
 
     savefig(fig, f"{path_prefix}utility.pdf")
 
+    plt.close(fig)
+
 def graph_utility_scaled(metrics: Metrics, path_prefix: str):
     fig = plt.figure()
     ax = fig.gca()
@@ -83,6 +85,8 @@ def graph_utility_scaled(metrics: Metrics, path_prefix: str):
     ax.legend(bbox_to_anchor=(1.275, 1), loc="upper right", ncol=1)
 
     savefig(fig, f"{path_prefix}norm-utility.pdf")
+
+    plt.close(fig)
 
 def graph_behaviour_state(metrics: Metrics, path_prefix: str):
     agents, capabilities = zip(*metrics.behaviour_changes.keys())
@@ -121,6 +125,8 @@ def graph_behaviour_state(metrics: Metrics, path_prefix: str):
     fig.subplots_adjust(hspace=0.35)
 
     savefig(fig, f"{path_prefix}behaviour_state.pdf")
+
+    plt.close(fig)
 
 def graph_interactions(metrics: Metrics, path_prefix: str):
     keys = {(b.target, b.capability) for b in metrics.buffers}
@@ -171,6 +177,8 @@ def graph_interactions(metrics: Metrics, path_prefix: str):
 
     savefig(fig, f"{path_prefix}interactions.pdf")
 
+    plt.close(fig)
+
 def graph_interactions_utility_hist(metrics: Metrics, path_prefix: str):
 
     correct = [
@@ -212,6 +220,8 @@ def graph_interactions_utility_hist(metrics: Metrics, path_prefix: str):
 
     savefig(fig, f"{path_prefix}interactions-utility-hist.pdf")
 
+    plt.close(fig)
+
 def graph_evictions(metrics: Metrics, path_prefix: str):
     columns = ["crypto", "trust", "reputation", "stereotype"]
     column_to_data = {
@@ -240,7 +250,7 @@ def graph_evictions(metrics: Metrics, path_prefix: str):
         for (column, column_data) in column_to_data.items()
     }
 
-    fig, axs = plt.subplots(nrows=len(agents), ncols=len(columns), sharex=True, squeeze=False, figsize=(18,30))
+    fig, axs = plt.subplots(nrows=max(1, len(agents)), ncols=max(1, len(columns)), sharex=True, squeeze=False, figsize=(18,30))
 
     for (agent, col) in itertools.product(agents, columns):
         try:
@@ -266,6 +276,8 @@ def graph_evictions(metrics: Metrics, path_prefix: str):
     fig.subplots_adjust(hspace=0.35)
 
     savefig(fig, f"{path_prefix}evictions.pdf")
+
+    plt.close(fig)
 
 def graph_interactions_performed(metrics: Metrics, path_prefix: str):
 
@@ -301,6 +313,8 @@ def graph_interactions_performed(metrics: Metrics, path_prefix: str):
     fig.subplots_adjust(hspace=0.35)
 
     savefig(fig, f"{path_prefix}interactions-performed.pdf")
+
+    plt.close(fig)
 
 def call(fn):
     fn()

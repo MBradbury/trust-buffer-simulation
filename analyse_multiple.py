@@ -11,6 +11,7 @@ from pprint import pprint
 import os
 import fnmatch
 from typing import Dict
+import gc
 
 import numpy as np
 
@@ -82,6 +83,9 @@ def graph_utility_summary_grouped_es(all_metrics: Dict[str, Metrics], path_prefi
         ax.set_xticklabels(ax.get_xticklabels(), rotation='vertical')
 
         savefig(fig, f"{path_prefix}utility-boxplot-{behaviour}-{size}.pdf")
+
+        plt.close(fig)
+        gc.collect()
 
 # from: http://louistiao.me/posts/adding-__name__-and-__doc__-attributes-to-functoolspartial-objects/
 def wrapped_partial(func, *args, **kwargs):
