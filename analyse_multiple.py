@@ -45,7 +45,7 @@ def graph_utility_summary(all_metrics: Dict[str, Metrics], path_prefix: str):
     #ax.set_ylim(0, 1)
     ax.set_ylabel('Utility (\\%)')
 
-    ax.set_xticklabels(ax.get_xticklabels(), rotation='vertical')
+    ax.set_xticklabels(labels, rotation='vertical')
 
     savefig(fig, f"{path_prefix}utility-boxplot.pdf")
 
@@ -82,7 +82,7 @@ def graph_utility_summary_grouped_es(all_metrics: Dict[str, Metrics], path_prefi
         ax.set_ylim(0, 1)
         ax.set_ylabel('Normalised Utility (\\%)')
 
-        ax.set_xticklabels(ax.get_xticklabels(), rotation='vertical')
+        ax.set_xticklabels(labels, rotation='vertical')
 
         savefig(fig, f"{path_prefix}utility-boxplot-{behaviour}-{size}.pdf")
 
@@ -130,7 +130,7 @@ def graph_capacity_utility_es(all_metrics: Dict[str, Metrics], path_prefix: str)
         print(behaviour, size)
 
         data.extend(
-            (metrics_capacity(metrics), behaviour, path[1], describe([b.utility / b.max_utility for b in metrics.buffers if not np.isnan(b.utility)]))
+            (metrics_capacity(metrics), behaviour, path[1], np.median([b.utility / b.max_utility for b in metrics.buffers if not np.isnan(b.utility)]))
             for (path, metrics) in all_metrics.items()
             if path[0] == behaviour
             and path[-1] == size
@@ -144,12 +144,11 @@ def graph_capacity_utility_es(all_metrics: Dict[str, Metrics], path_prefix: str)
             d = [(x, y) for (x, b, s, y) in data if s == strategy and b == behaviour]
 
             X, Y = zip(*d)
-            Y = [x.mean for x in Y]
 
             ax.scatter(X, Y, label=strategy)
 
         ax.set_ylim(0, 1)
-        ax.set_ylabel('Mean Utility (\\%)')
+        ax.set_ylabel('Median Normalised Utility (\\%)')
 
         ax.set_xlim(1 + 0.05, 0 - 0.05)
         ax.set_xlabel('Capacity (\\%)')
@@ -246,7 +245,7 @@ def main(args):
 
     print("Loaded metrics!")
 
-    fns = [graph_utility_summary_grouped_es, graph_capacity_utility_es]
+    fns = [graph_capacity_utility_es, graph_utility_summary_grouped_es]
     fns = [wrapped_partial(fn, all_metrics, args.path_prefix) for fn in fns]
 
     print("Creating graphs...")
