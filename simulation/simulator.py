@@ -14,7 +14,7 @@ from simulation.utility_targets import UtilityTargets
 
 
 class Simulator:
-    def __init__(self, seed: int, agents: List[Agent], escls, duration: float, utility_targets: UtilityTargets):
+    def __init__(self, seed: int, agents: List[Agent], escls, duration: float, utility_targets: UtilityTargets, log_level: int):
         # Initialise the PRNG and record the seed
         self.seed = seed
         self.rng = random.Random(self.seed)
@@ -32,6 +32,8 @@ class Simulator:
         self.queue = []
 
         self.metrics = Metrics()
+
+        self.log_level = log_level
 
     def add_event(self, event):
         heapq.heappush(self.queue, event)
@@ -55,4 +57,5 @@ class Simulator:
             item.action(self)
 
     def log(self, message: str):
-        print(f"{self.current_time}|{message}")
+        if self.log_level > 0:
+            print(f"{self.current_time}|{message}")

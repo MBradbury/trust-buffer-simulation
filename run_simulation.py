@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 from itertools import chain
+import secrets
 
 from simulation.agent import *
 from simulation.capability import *
@@ -47,7 +48,7 @@ def main(args):
 
     es = get_eviction_strategy(args.eviction_strategy)
 
-    sim = Simulator(seed, agents, es, args.duration, args.utility_targets)
+    sim = Simulator(seed, agents, es, args.duration, args.utility_targets, args.log_level)
 
     sim.run(args.max_start_delay)
 
@@ -127,6 +128,9 @@ if __name__ == "__main__":
 
     parser.add_argument('--seed', type=int, required=False, default=None,
                         help='The simulation seed')
+
+    parser.add_argument('--log-level', type=int, choices=(0, 1), required=False, default=1,
+                        help='The log level')
 
     args = parser.parse_args()
 
