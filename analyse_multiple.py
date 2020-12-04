@@ -19,6 +19,7 @@ from scipy.stats import describe
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 
 from simulation.metrics import Metrics
 from simulation.capability import CapabilityBehaviourState, InteractionObservation
@@ -42,8 +43,9 @@ def graph_utility_summary(all_metrics: Dict[str, Metrics], path_prefix: str):
 
     ax.boxplot(Xs, labels=labels)
 
-    #ax.set_ylim(0, 1)
+    ax.set_ylim(0, 1)
     ax.set_ylabel('Utility (\\%)')
+    ax.yaxis.set_major_formatter(ticker.PercentFormatter(xmax=1, symbol=''))
 
     ax.set_xticklabels(labels, rotation='vertical')
 
@@ -81,6 +83,7 @@ def graph_utility_summary_grouped_es(all_metrics: Dict[str, Metrics], path_prefi
 
         ax.set_ylim(0, 1)
         ax.set_ylabel('Normalised Utility (\\%)')
+        ax.yaxis.set_major_formatter(ticker.PercentFormatter(xmax=1, symbol=''))
 
         ax.set_xticklabels(labels, rotation='vertical')
 
@@ -147,11 +150,13 @@ def graph_capacity_utility_es(all_metrics: Dict[str, Metrics], path_prefix: str)
 
             ax.scatter(X, Y, label=strategy)
 
-        ax.set_ylim(0, 1)
+        ax.set_ylim(0 - 0.05, 1 + 0.05)
         ax.set_ylabel('Median Normalised Utility (\\%)')
+        ax.yaxis.set_major_formatter(ticker.PercentFormatter(xmax=1, symbol=''))
 
         ax.set_xlim(1 + 0.05, 0 - 0.05)
         ax.set_xlabel('Capacity (\\%)')
+        ax.xaxis.set_major_formatter(ticker.PercentFormatter(xmax=1, symbol=''))
 
         ax.legend()
 
@@ -198,8 +203,10 @@ def graph_size_utility_es(all_metrics: Dict[str, Metrics], path_prefix: str):
             ax.bar(X, Ydata, yerr=mplyerr)
 
             if j == 0:
-                ax.set_ylim(0, 1)
+                
                 ax.set_ylabel('Median Utility (\\%)')
+            ax.set_ylim(0, 1)
+            ax.yaxis.set_major_formatter(ticker.PercentFormatter(xmax=1, symbol=''))
 
             ax.set_xticklabels(X, rotation='vertical')
 
@@ -245,7 +252,7 @@ def main(args):
 
     print("Loaded metrics!")
 
-    fns = [graph_capacity_utility_es, graph_utility_summary_grouped_es]
+    fns = [graph_capacity_utility_es]#, graph_utility_summary_grouped_es]
     fns = [wrapped_partial(fn, all_metrics, args.path_prefix) for fn in fns]
 
     print("Creating graphs...")
