@@ -42,6 +42,12 @@ class EvictionStrategy:
     def use_stereotype(self, item: StereotypeItem):
         return self.use_common(item)
 
+class NoneEvictionStrategy(EvictionStrategy):
+    short_name = "None"
+
+    def choose_common(self, items: List, buffers: AgentBuffers, new_item):
+        return None
+
 class RandomEvictionStrategy(EvictionStrategy):
     short_name = "Random"
 
@@ -270,11 +276,15 @@ class MinNotInOtherEvictionStrategy(EvictionStrategy):
     def add_common(self, item):
         item.eviction_data = self.sim.current_time
 
-    def _lru(self, items):
-        if not items:
+    def _lru(self, choices):
+        if not choices:
             return None
 
-        return min(items, key=lambda x: x.eviction_data)
+        min_count = min(choices, key=lambda x: x[1])[1]
+
+        selected = [item for (item, count) in choices if count == min_count]
+
+        return min(selected, key=lambda x: x.eviction_data)
 
     def choose_crypto(self, items: List[CryptoItem], buffers: AgentBuffers, new_item: CryptoItem) -> Optional[CryptoItem]:
         if not items:
@@ -284,9 +294,8 @@ class MinNotInOtherEvictionStrategy(EvictionStrategy):
             (item, buffers.buffer_has_agent_count(item.agent, "TRS"))
             for item in items
         ]
-        min_count = min(choices, key=lambda x: x[1])
 
-        return self._lru([item for (item, count) in choices if count == min_count])
+        return self._lru(choices)
 
     def choose_trust(self, items: List[TrustItem], buffers: AgentBuffers, new_item: TrustItem) -> Optional[TrustItem]:
         if not items:
@@ -296,9 +305,8 @@ class MinNotInOtherEvictionStrategy(EvictionStrategy):
             (item, buffers.buffer_has_agent_capability_count(item.agent, item.capability, "CRS"))
             for item in items
         ]
-        min_count = min(choices, key=lambda x: x[1])
 
-        return self._lru([item for (item, count) in choices if count == min_count])
+        return self._lru(choices)
 
     def choose_reputation(self, items: List[ReputationItem], buffers: AgentBuffers, new_item: ReputationItem) -> Optional[ReputationItem]:
         if not items:
@@ -308,9 +316,8 @@ class MinNotInOtherEvictionStrategy(EvictionStrategy):
             (item, sum(buffers.buffer_has_agent_capability_count(trust_item.agent, trust_item.capability, "CTS") for trust_item in item.trust_items))
             for item in items
         ]
-        min_count = min(choices, key=lambda x: x[1])
 
-        return self._lru([item for (item, count) in choices if count == min_count])
+        return self._lru(choices)
 
     def choose_stereotype(self, items: List[StereotypeItem], buffers: AgentBuffers, new_item: StereotypeItem) -> Optional[StereotypeItem]:
         if not items:
@@ -320,9 +327,8 @@ class MinNotInOtherEvictionStrategy(EvictionStrategy):
             (item, buffers.buffer_has_agent_capability_count(item.agent, item.capability, "CTR"))
             for item in items
         ]
-        min_count = min(choices, key=lambda x: x[1])
 
-        return self._lru([item for (item, count) in choices if count == min_count])
+        return self._lru(choices)
 
     def use_common(self, item: List):
         if item is None:
