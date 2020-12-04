@@ -289,59 +289,57 @@ class AgentBuffers:
             if a is not agent and capability in a.capabilities
         ]
 
-        self.log(f"#Evaluating utility for {agent}:")
-        for a in agents:
-            self.log(f"#\t{a}: Uc={Uc(a)} Ud={Ud(a)} Up={Up(a)} Us={Us(a)}")
+        #self.log(f"#Evaluating utility for {agent}:")
+        #for a in agents:
+        #    self.log(f"#\t{a}: Uc={Uc(a)} Ud={Ud(a)} Up={Up(a)} Us={Us(a)}")
 
         if not agents:
             return float("NaN")
         else:
             return sum(Uc(a) * (1 + Ud(a) + Up(a) + Us(a)) * (1.0/4.0) for a in agents) / len(agents)
 
-    # TODO: could this be done per capability?
-    def max_utility(self):
-        sim = self.agent.sim
+    def max_utility(self, agent: Agent, capability: Capability, targets: List=None):
+        sim = agent.sim
 
-        agents = set(sim.agents) - {self.agent}
-        sorted_agents = list(sorted(agents, key=lambda x: len(set(x.capabilities) & set(self.agent.capabilities)), reverse=True))
-        selected_agents = sorted_agents[0:self.crypto.length]
+        if targets is None:
+            targets = sim.agents
+
+        agents = [
+            a for a in targets
+            if a is not agent and capability in a.capabilities
+        ]
+
+        if not agents:
+            return float("NaN")
+
+        selected_agents = agents[0:min(self.crypto.length, len(agents))]
+        selected_trust = selected_agents[0:min(self.trust.length, len(selected_agents))]
+        selected_stereotype = selected_agents[0:min(self.stereotype.length, len(selected_agents))]
+        selected_reputation = selected_agents[0:min(self.reputation.length, len(selected_agents))]
 
         # crypto and reputation per agent
         # trust and stereotype per (agent, capability)
 
-        global available_trust
-        global available_reputation
-        global available_stereotype
+        def U(other: Agent) -> int:
+            result = 0
 
-        available_trust = self.trust.length
-        available_reputation = self.reputation.length
-        available_stereotype = self.stereotype.length
-
-        def Ud(other: Agent):
-            global available_trust
-            if available_trust > 0:
-                available_trust -= 1
-                return 1
+            if other in selected_agents:
+                result += 1
             else:
                 return 0
 
-        def Up(other: Agent):
-            global available_reputation
-            if available_reputation > 0:
-                available_reputation -= 1
-                return 1
-            else:
-                return 0
+            if other in selected_trust:
+                result += 1
 
-        def Us(other: Agent):
-            global available_stereotype
-            if available_stereotype > 0:
-                available_stereotype -= 1
-                return 1
-            else:
-                return 0
+            if other in selected_stereotype:
+                result += 1
 
-        return sum((1 + Ud(a) + Up(a) + Us(a)) * 1.0/4.0 for a in selected_agents) / len(agents)
+            if other in selected_reputation:
+                result += 1
+
+            return result
+
+        return sum(U(a) / 4.0 for a in agents) / len(agents)
 
     def log(self, message: str):
         self.agent.log(message)

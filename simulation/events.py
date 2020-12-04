@@ -112,9 +112,11 @@ class AgentTaskInteraction(BaseEvent):
             raise NotImplementedError()
 
         utility = self.buffers.utility(self.source, self.capability, targets=utility_targets)
-        self.log(sim, f"Value of buffers {utility} {self.capability}")
+        max_utility = self.buffers.max_utility(self.source, self.capability, targets=utility_targets)
+        self.log(sim, f"Value of buffers {utility} (max={max_utility}) {self.capability}")
 
-        sim.metrics.add_buffer_evaluation(sim.current_time, self.source, self.capability, outcomes, self.buffers.basic(), utility, self.target, outcome)
+        sim.metrics.add_buffer_evaluation(sim.current_time, self.source, self.capability, outcomes,
+                                          self.buffers.basic(), utility, max_utility, self.target, outcome)
 
         # Update source's interaction history
         self.source.update_trust_history(self.target, self.capability, outcome)
