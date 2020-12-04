@@ -42,10 +42,6 @@ def graph_utility(metrics: Metrics, path_prefix: str):
         X, Y = zip(*utilities)
         ax.plot(X, Y, label=f"{src} {cap}")
 
-    # Show the maximum utility
-    # Assumes all nodes have the same buffer sizes
-    ax.axhline(y=max(metrics.max_utilities.values()), xmin=0.0, xmax=1.0, color='r')
-
     ax.set_ylim(0, 1)
 
     ax.set_xlabel('Time (secs)')
@@ -57,6 +53,37 @@ def graph_utility(metrics: Metrics, path_prefix: str):
 
     plt.close(fig)
 
+def graph_max_utility(metrics: Metrics, path_prefix: str):
+    fig = plt.figure()
+    ax = fig.gca()
+
+    sources_utilities = {(b.source, b.capability) for b in metrics.buffers}
+
+    grouped_utility = {
+        (asrc, acap): [
+            (b.t, b.max_utility)
+
+            for b in metrics.buffers
+            if asrc == b.source and acap == b.capability
+        ]
+        for (asrc, acap) in sources_utilities
+    }
+
+    for ((src, cap), utilities) in sorted(grouped_utility.items(), key=lambda x: x[0]):
+        X, Y = zip(*utilities)
+        ax.plot(X, Y, label=f"{src} {cap}")
+
+    ax.set_ylim(0, 1)
+
+    ax.set_xlabel('Time (secs)')
+    ax.set_ylabel('Maximum Utility (\\%)')
+
+    ax.legend(bbox_to_anchor=(1.275, 1), loc="upper right", ncol=1)
+
+    savefig(fig, f"{path_prefix}max-utility.pdf")
+
+    plt.close(fig)
+
 def graph_utility_scaled(metrics: Metrics, path_prefix: str):
     fig = plt.figure()
     ax = fig.gca()
@@ -65,7 +92,7 @@ def graph_utility_scaled(metrics: Metrics, path_prefix: str):
 
     grouped_utility = {
         (asrc, acap): [
-            (b.t, b.utility / metrics.max_utilities[asrc])
+            (b.t, b.utility / b.max_utility)
 
             for b in metrics.buffers
             if asrc == b.source and acap == b.capability
@@ -85,6 +112,37 @@ def graph_utility_scaled(metrics: Metrics, path_prefix: str):
     ax.legend(bbox_to_anchor=(1.275, 1), loc="upper right", ncol=1)
 
     savefig(fig, f"{path_prefix}norm-utility.pdf")
+
+    plt.close(fig)
+
+def graph_utility_max_distance(metrics: Metrics, path_prefix: str):
+    fig = plt.figure()
+    ax = fig.gca()
+
+    sources_utilities = {(b.source, b.capability) for b in metrics.buffers}
+
+    grouped_utility = {
+        (asrc, acap): [
+            (b.t, b.max_utility - b.utility)
+
+            for b in metrics.buffers
+            if asrc == b.source and acap == b.capability
+        ]
+        for (asrc, acap) in sources_utilities
+    }
+
+    for ((src, cap), utilities) in sorted(grouped_utility.items(), key=lambda x: x[0]):
+        X, Y = zip(*utilities)
+        ax.plot(X, Y, label=f"{src} {cap}")
+
+    ax.set_ylim(0, 1)
+
+    ax.set_xlabel('Time (secs)')
+    ax.set_ylabel('Utility Distance (\\%)')
+
+    ax.legend(bbox_to_anchor=(1.275, 1), loc="upper right", ncol=1)
+
+    savefig(fig, f"{path_prefix}utility-distance.pdf")
 
     plt.close(fig)
 
@@ -323,8 +381,9 @@ def main(args):
     with open(args.metrics_path, "rb") as f:
         metrics = pickle.load(f)
 
-    fns = [graph_utility, graph_utility_scaled, graph_behaviour_state,
-           graph_interactions, graph_interactions_utility_hist, graph_evictions,
+    fns = [graph_utility, graph_max_utility, graph_utility_scaled, graph_utility_max_distance,
+           graph_behaviour_state, graph_interactions, graph_interactions_utility_hist,
+           #graph_evictions,
            graph_interactions_performed]
     fns = [functools.partial(fn, metrics, args.path_prefix) for fn in fns]
 
