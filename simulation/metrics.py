@@ -15,6 +15,7 @@ class BufferEvaluation:
     outcomes: dict
     buffers: dict
     utility: float
+    max_utility: float
     target: str
     outcome: InteractionObservation
 
@@ -30,11 +31,12 @@ class Metrics:
 
     def add_buffer_evaluation(self, t: float,
                               source: Agent, capability: Capability,
-                              outcomes: dict, buffers, utility: float,
+                              outcomes: dict, buffers,
+                              utility: float, max_utility: float,
                               target: Agent, outcome: InteractionObservation):
         pickleable_outcomes = {agent.name: outcome for (agent, outcome) in outcomes.items()}
 
-        self.buffers.append(BufferEvaluation(t, source.name, capability.name, pickleable_outcomes, buffers, utility, target.name, outcome))
+        self.buffers.append(BufferEvaluation(t, source.name, capability.name, pickleable_outcomes, buffers, utility, max_utility, target.name, outcome))
 
     def add_evicted_crypto(self, t: float, agent: Agent, choice):
         self.evicted_crypto.append((t, agent.name, choice.basic()))
@@ -65,15 +67,16 @@ class Metrics:
             for (capability, behaviour) in agent.capability_behaviour.items()
         }
 
-        self.max_utilities = {
-            agent.name: agent.buffers.max_utility()
-            for agent in sim.agents
-        }
+        #print("crypto", len(self.evicted_crypto))
+        #print("trust", len(self.evicted_trust))
+        #print("reputation", len(self.evicted_reputation))
+        #print("stereotype", len(self.evicted_stereotype))
 
-        print("crypto", len(self.evicted_crypto))
-        print("trust", len(self.evicted_trust))
-        print("reputation", len(self.evicted_reputation))
-        print("stereotype", len(self.evicted_stereotype))
-
-        with open(f"{path_prefix}metrics.pickle", "wb") as f:
+        with open(f"{path_prefix}metrics.{sim.seed}.pickle", "wb") as f:
             pickle.dump(self, f, protocol=pickle.HIGHEST_PROTOCOL)
+
+    def num_agents(self) -> int:
+        return sum(num_agents for (num_agents, behaviour) in self.args.agents)
+
+    def num_capabilities(self) -> int:
+        return self.args.num_capabilities
