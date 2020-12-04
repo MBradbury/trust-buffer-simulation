@@ -155,8 +155,6 @@ class FiveBandEvictionStrategy(EvictionStrategy):
         # Keep the middle 20% nodes as they may not have had a chance to stabilise
         # Consider removing the inbetween nodes that are neither very good or very bad
 
-        print("quantile", quantile)
-
         low, lowmid, mid, highmid, high = quantile
 
         filtered_items = [
