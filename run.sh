@@ -1,5 +1,12 @@
 #!/bin/bash
 
+function ctrl_c() {
+	echo "** Trapped CTRL-C"
+	exit 1
+}
+
+trap ctrl_c SIGINT
+
 BEHAVIOURS=("GoodBehaviour" "UnstableBehaviour" "AlwaysGoodBehaviour" "VeryGoodBehaviour")
 
 ESs=("LRU" "LRU2" "Random" "FIFO" "MRU" "Chen2016" "FiveBand" "NotInOther" "MinNotInOther")
@@ -20,8 +27,6 @@ BE_PRODUCT=$(eval echo {"${BEHAVIOURS[*]}"}/{"${ESs[*]}"})
 for BEHAVIOUR in "${BEHAVIOURS[@]}"
 do
 	echo "Running behaviour $BEHAVIOUR"
-
-	rm -rf "$BEHAVIOUR"
 	mkdir -p "$BEHAVIOUR"
 
 	# No evictions
@@ -34,9 +39,9 @@ do
 			--num-capabilities $NUM_CAPABILITIES --duration $DURATION \
 			--max-crypto-buf 10 --max-trust-buf 20 --max-reputation-buf 10 --max-stereotype-buf 20 \
 			--eviction-strategy "$ES" --agent-choose "$AGENT_CHOOSE" --utility-targets "$UTILITY_TARGETS" \
-			--seed $SEED --path-prefix "$BEHAVIOUR/$ES/complete-" > "$BEHAVIOUR/$ES/complete.log"
+			--seed $SEED --path-prefix "$BEHAVIOUR/$ES/complete-" --log-level 0
 
-		./analyse_individual.py "$BEHAVIOUR/$ES/complete-metrics.pickle" --path-prefix "$BEHAVIOUR/$ES/complete-"
+		./analyse_individual.py "$BEHAVIOUR/$ES/complete-metrics.$SEED.pickle" --path-prefix "$BEHAVIOUR/$ES/complete-"
 	done
 
 	echo "-----------"
@@ -51,9 +56,9 @@ do
 			--num-capabilities $NUM_CAPABILITIES --duration $DURATION \
 			--max-crypto-buf 10 --max-trust-buf 10 --max-reputation-buf 10 --max-stereotype-buf 10 \
 			--eviction-strategy "$ES" --agent-choose "$AGENT_CHOOSE" --utility-targets "$UTILITY_TARGETS" \
-			--seed $SEED --path-prefix "$BEHAVIOUR/$ES/large-" > "$BEHAVIOUR/$ES/large.log"
+			--seed $SEED --path-prefix "$BEHAVIOUR/$ES/large-" --log-level 0
 
-		./analyse_individual.py "$BEHAVIOUR/$ES/large-metrics.pickle" --path-prefix "$BEHAVIOUR/$ES/large-"
+		./analyse_individual.py "$BEHAVIOUR/$ES/large-metrics.$SEED.pickle" --path-prefix "$BEHAVIOUR/$ES/large-"
 	done
 
 	echo "-----------"
@@ -67,9 +72,9 @@ do
 			--num-capabilities $NUM_CAPABILITIES --duration $DURATION \
 			--max-crypto-buf 10 --max-trust-buf 5 --max-reputation-buf 5 --max-stereotype-buf 5 \
 			--eviction-strategy "$ES" --agent-choose "$AGENT_CHOOSE" --utility-targets "$UTILITY_TARGETS" \
-			--seed $SEED --path-prefix "$BEHAVIOUR/$ES/medium-" > "$BEHAVIOUR/$ES/medium.log"
+			--seed $SEED --path-prefix "$BEHAVIOUR/$ES/medium-" --log-level 0
 
-		./analyse_individual.py "$BEHAVIOUR/$ES/medium-metrics.pickle" --path-prefix "$BEHAVIOUR/$ES/medium-"
+		./analyse_individual.py "$BEHAVIOUR/$ES/medium-metrics.$SEED.pickle" --path-prefix "$BEHAVIOUR/$ES/medium-"
 	done
 
 	echo "-----------"
@@ -84,9 +89,9 @@ do
 			--num-capabilities $NUM_CAPABILITIES --duration $DURATION \
 			--max-crypto-buf 5 --max-trust-buf 5 --max-reputation-buf 5 --max-stereotype-buf 5 \
 			--eviction-strategy "$ES" --agent-choose "$AGENT_CHOOSE" --utility-targets "$UTILITY_TARGETS" \
-			--seed $SEED --path-prefix "$BEHAVIOUR/$ES/small-" > "$BEHAVIOUR/$ES/small.log"
+			--seed $SEED --path-prefix "$BEHAVIOUR/$ES/small-" --log-level 0
 
-		./analyse_individual.py "$BEHAVIOUR/$ES/small-metrics.pickle" --path-prefix "$BEHAVIOUR/$ES/small-"
+		./analyse_individual.py "$BEHAVIOUR/$ES/small-metrics.$SEED.pickle" --path-prefix "$BEHAVIOUR/$ES/small-"
 	done
 
 	echo "==========="
