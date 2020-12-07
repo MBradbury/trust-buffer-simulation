@@ -252,7 +252,7 @@ def main(args):
 
     print("Loaded metrics!")
 
-    fns = [graph_capacity_utility_es]#, graph_utility_summary_grouped_es]
+    fns = [graph_capacity_utility_es, graph_utility_summary_grouped_es]
     fns = [wrapped_partial(fn, all_metrics, args.path_prefix) for fn in fns]
 
     print("Creating graphs...")
