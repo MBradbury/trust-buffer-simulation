@@ -9,11 +9,15 @@ trap ctrl_c SIGINT
 
 BEHAVIOURS=("GoodBehaviour" "UnstableBehaviour" "AlwaysGoodBehaviour" "VeryGoodBehaviour")
 
-ESs=("None", "LRU" "LRU2" "Random" "FIFO" "MRU" "Chen2016" "FiveBand" "NotInOther" "MinNotInOther")
+ESs=("None" "LRU" "LRU2" "Random" "FIFO" "MRU" "Chen2016" "FiveBand" "NotInOther" "MinNotInOther")
 
 rm -f *.pdf
 
-SEED=2
+if [ -z "$SEED" ]
+then
+	SEED=2
+fi
+
 NUM_AGENTS=8
 NUM_BAD_AGENTS=2
 NUM_CAPABILITIES=2
@@ -23,6 +27,8 @@ UTILITY_TARGETS=good
 
 IFS=,
 BE_PRODUCT=$(eval echo {"${BEHAVIOURS[*]}"}/{"${ESs[*]}"})
+
+echo "SEED=$SEED"
 
 for BEHAVIOUR in "${BEHAVIOURS[@]}"
 do
