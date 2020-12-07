@@ -28,7 +28,7 @@ def get_agent_choose_behaviour(name: str):
 def main(args):
     seed = args.seed if args.seed is not None else secrets.randbits(32)
 
-    capabilities = [Capability(f"C{n}", args.task_period) for n in range(args.num_capabilities)]
+    capabilities = [Capability(f"C{n}", args.task_period, n) for n in range(args.num_capabilities)]
 
     choose = get_agent_choose_behaviour(args.agent_choose)
 

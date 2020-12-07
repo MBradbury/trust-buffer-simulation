@@ -9,7 +9,7 @@ trap ctrl_c SIGINT
 
 BEHAVIOURS=("GoodBehaviour" "UnstableBehaviour" "AlwaysGoodBehaviour" "VeryGoodBehaviour")
 
-ESs=("None" "LRU" "LRU2" "Random" "FIFO" "MRU" "Chen2016" "FiveBand" "NotInOther" "MinNotInOther")
+ESs=("CapPri" "None" "LRU" "LRU2" "Random" "FIFO" "MRU" "Chen2016" "FiveBand" "NotInOther" "MinNotInOther")
 
 rm -f *.pdf
 

@@ -193,9 +193,10 @@ class UnstableBehaviour(CapabilityBehaviour):
 #    pass
 
 class Capability:
-    def __init__(self, name: str, task_period: float):
+    def __init__(self, name: str, task_period: float, priority: int):
         self.name = name
         self.task_period = task_period
+        self.priority = priority
 
     def next_task_period(self, rng: random.Random) -> float:
         return rng.expovariate(1.0 / self.task_period)

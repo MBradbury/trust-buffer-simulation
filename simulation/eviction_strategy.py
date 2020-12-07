@@ -337,6 +337,40 @@ class MinNotInOtherEvictionStrategy(EvictionStrategy):
         item.eviction_data = self.sim.current_time
 
 
+class CapabilityPriorityEvictionStrategy(EvictionStrategy):
+    short_name = "CapPri"
+
+    def add_common(self, item):
+        item.eviction_data = self.sim.current_time
+
+    def _lru(self, items):
+        if not items:
+            return None
+
+        min_priority = min(items, key=lambda x: x[1])[1]
+
+        selected = [item for (item, priority) in items if priority == min_priority]
+
+        return min(selected, key=lambda x: x.eviction_data)
+
+    def choose_crypto(self, items: List[CryptoItem], buffers: AgentBuffers, new_item: CryptoItem) -> Optional[CryptoItem]:
+        return self._lru([(item, max(capability.priority for capability in item.agent.capabilities)) for item in items])
+
+    def choose_trust(self, items: List[TrustItem], buffers: AgentBuffers, new_item: TrustItem) -> Optional[TrustItem]:
+        return self._lru([(item, item.capability.priority) for item in items])
+
+    def choose_reputation(self, items: List[ReputationItem], buffers: AgentBuffers, new_item: ReputationItem) -> Optional[ReputationItem]:
+        return self._lru([(item, item.capability.priority) for item in items])
+
+    def choose_stereotype(self, items: List[StereotypeItem], buffers: AgentBuffers, new_item: StereotypeItem) -> Optional[StereotypeItem]:
+        return self._lru([(item, item.capability.priority) for item in items])
+
+    def use_common(self, item: List):
+        if item is None:
+            return
+
+        item.eviction_data = self.sim.current_time
+
 """
 class HolisticEvictionStrategy(EvictionStrategy):
     short_name = "Holistic"
