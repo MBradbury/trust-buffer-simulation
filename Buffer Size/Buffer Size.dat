@@ -1,0 +1,16 @@
+/*********************************************
+ * OPL 12.8.0.0 Data
+ * Author: Matt
+ * Creation Date: 7 Dec 2020 at 18:14:06
+ *********************************************/
+ 
+num_agents = 10;
+num_capabilities = 2;
+
+crypto_size = 160;
+trust_model_size = 8; // BRS
+total_memory_size_available = 1024;
+
+num_buffers = 4;
+  
+buffer_weights = [1, 1, 1, 1];

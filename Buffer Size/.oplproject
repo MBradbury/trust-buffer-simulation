@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="ASCII"?><project>
+	<version>1.0</version>
+	<configs>
+		<config default="true" name="DefaultConf" category="opl">
+			<ref name="Buffer Size.dat" type="data">
+			</ref>
+			<ref name="Buffer Size.mod" type="model">
+			</ref>
+			<ref name="Buffer Size.ops" type="setting">
+			</ref>
+		</config>
+	</configs>
+	
+</project>
