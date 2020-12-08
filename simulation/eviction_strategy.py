@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import math
+
 import numpy as np
 
 class EvictionStrategy:
@@ -360,7 +362,7 @@ class CapabilityPriorityEvictionStrategy(EvictionStrategy):
         return self._lru([(item, item.capability.priority) for item in items])
 
     def choose_reputation(self, items: List[ReputationItem], buffers: AgentBuffers, new_item: ReputationItem) -> Optional[ReputationItem]:
-        return self._lru([(item, max(trust_item.capability.priority for trust_item in item.trust_items)) for item in items])
+        return self._lru([(item, max(trust_item.capability.priority for trust_item in item.trust_items) if item.trust_items else -1) for item in items])
 
     def choose_stereotype(self, items: List[StereotypeItem], buffers: AgentBuffers, new_item: StereotypeItem) -> Optional[StereotypeItem]:
         return self._lru([(item, item.capability.priority) for item in items])
