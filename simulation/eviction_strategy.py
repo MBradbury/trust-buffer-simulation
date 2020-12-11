@@ -74,7 +74,7 @@ class LRUEvictionStrategy(EvictionStrategy):
     def choose_common(self, items: List, buffers: AgentBuffers, new_item):
         return min(items, key=lambda x: x.eviction_data)
 
-    def use_common(self, item: List):
+    def use_common(self, item):
         if item is None:
             return
 
@@ -89,7 +89,7 @@ class LRU2EvictionStrategy(EvictionStrategy):
     def choose_common(self, items: List, buffers: AgentBuffers, new_item):
         return min(items, key=lambda x: x.eviction_data[1])
 
-    def use_common(self, item: List):
+    def use_common(self, item):
         if item is None:
             return
 
@@ -104,7 +104,7 @@ class MRUEvictionStrategy(EvictionStrategy):
     def choose_common(self, items: List, buffers: AgentBuffers, new_item):
         return max(items, key=lambda x: x.eviction_data)
 
-    def use_common(self, item: List):
+    def use_common(self, item):
         if item is None:
             return
 
@@ -142,7 +142,7 @@ class Chen2016EvictionStrategy(EvictionStrategy):
         # Do LRU for everything else
         return min(items, key=lambda x: x.eviction_data)
 
-    def use_common(self, item: List):
+    def use_common(self, item):
         if item is None:
             return
 
@@ -190,7 +190,7 @@ class FiveBandEvictionStrategy(EvictionStrategy):
         # Do LRU for everything else
         return min(items, key=lambda x: x.eviction_data)
 
-    def use_common(self, item: List):
+    def use_common(self, item):
         if item is None:
             return
 
@@ -265,7 +265,7 @@ class NotInOtherEvictionStrategy(EvictionStrategy):
 
         return self._lru(items)
 
-    def use_common(self, item: List):
+    def use_common(self, item):
         if item is None:
             return
 
@@ -332,7 +332,7 @@ class MinNotInOtherEvictionStrategy(EvictionStrategy):
 
         return self._lru(choices)
 
-    def use_common(self, item: List):
+    def use_common(self, item):
         if item is None:
             return
 
@@ -367,7 +367,7 @@ class CapabilityPriorityEvictionStrategy(EvictionStrategy):
     def choose_stereotype(self, items: List[StereotypeItem], buffers: AgentBuffers, new_item: StereotypeItem) -> Optional[StereotypeItem]:
         return self._lru([(item, item.capability.priority) for item in items])
 
-    def use_common(self, item: List):
+    def use_common(self, item):
         if item is None:
             return
 
