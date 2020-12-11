@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 from dataclasses import dataclass
 
 from simulation.bounded_list import BoundExceedError, BoundedList
@@ -68,6 +69,8 @@ class StereotypeItem:
         return (self.agent.name, self.capability.name)
 
 class AgentBuffers:
+    buffers = ("crypto", "trust", "reputation", "stereotype")
+
     def __init__(self, agent: Agent, crypto_bux_max: int, trust_bux_max: int, reputation_bux_max: int, stereotype_bux_max: int):
         self.agent = agent
 
@@ -76,15 +79,22 @@ class AgentBuffers:
         self.reputation = BoundedList(length=reputation_bux_max)
         self.stereotype = BoundedList(length=stereotype_bux_max)
 
+    def frozen(self) -> AgentBuffers:
+        f = AgentBuffers(self.agent, self.crypto.length, self.trust.length, self.reputation.length, self.stereotype.length)
+
+        for b in self.buffers:
+            getattr(f, b).extend([copy.copy(i) for i in getattr(self, b)])
+            getattr(f, b).freeze()
+
+        return f
+
     def basic(self) -> dict:
         return {
-            "crypto": [x.basic() for x in self.crypto],
-            "trust": [x.basic() for x in self.trust],
-            "reputation": [x.basic() for x in self.reputation],
-            "stereotype": [x.basic() for x in self.stereotype],
+            b: [x.basic() for x in getattr(self, b)]
+            for b in self.buffers
         }
 
-    def find_crypto(self, agent) -> CryptoItem:
+    def find_crypto(self, agent: Agent) -> CryptoItem:
         for item in self.crypto:
             if item.agent is agent:
                 return item
