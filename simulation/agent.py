@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import copy
-
 from simulation.agent_behaviour import *
 from simulation.agent_buffers import *
 from simulation.capability import *
@@ -56,7 +54,7 @@ class Agent:
         if any(self.buffers.find_stereotype(agent, capability) is None for capability in self.capabilities):
             self.request_stereotype(agent)
 
-        trust_items = copy.copy(agent.buffers.trust)
+        trust_items = agent.buffers.frozen().trust
 
         # Record reputation information
         reputation_item = self.buffers.find_reputation(agent)
@@ -140,7 +138,7 @@ class Agent:
 
     def perform_interaction(self, selected_agent: Agent, capability: Capability):
         # Record the values in the buffers at the time the interaction was initiated
-        buffers = copy.copy(self.buffers)
+        buffers = self.buffers.frozen()
 
         self.sim.add_event(AgentTaskInteraction(self.sim.current_time + EPSILON, self, capability, selected_agent, buffers))
 
