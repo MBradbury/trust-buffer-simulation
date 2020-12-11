@@ -1,10 +1,12 @@
 
+from frozenlist import FrozenList
+
 # from: https://stackoverflow.com/questions/17526659/how-to-set-a-max-length-for-a-python-list-set
 
 class BoundExceedError(RuntimeError):
     pass
 
-class BoundedList(list):
+class BoundedList(FrozenList):
     def __init__(self, *args, **kwargs):
         self.length = kwargs.pop('length', None)
         super().__init__(*args, **kwargs)
