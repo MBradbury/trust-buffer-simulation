@@ -1,9 +1,3 @@
-/*********************************************
- * OPL 12.8.0.0 Model
- * Author: Matt
- * Creation Date: 7 Dec 2020 at 18:14:06
- *********************************************/
-
 int num_agents = ...;
 int num_capabilities = ...;
 
