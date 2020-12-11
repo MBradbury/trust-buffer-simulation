@@ -59,6 +59,6 @@ class BRSAgentChooseBehaviour(AgentChooseBehaviour):
         max_trust_value = max(trust_values.values())
 
         try:
-            return agent.sim.rng.choice([item for item in options if trust_values[item.agent] >= max_trust_value - 0.2])
+            return agent.sim.rng.choice([item for item in options if trust_values[item.agent] >= max_trust_value - 0.1])
         except IndexError:
             return None
