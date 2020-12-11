@@ -24,6 +24,8 @@ class Agent:
     def set_sim(self, sim):
         self.sim = sim
 
+        # Give each behaviour their own random seed to prevent capabilities
+        # all being good or bad simultaneously
         for (capability, behaviour) in sorted(self.capability_behaviour.items(), key=lambda x: x[0].name):
             behaviour.individual_seed = sim.rng.getrandbits(32)
 
@@ -43,7 +45,7 @@ class Agent:
 
         crypto_item = self.buffers.find_crypto(agent)
 
-        # Don't add items we already have
+        # Can't decrypt or verify
         if crypto_item is None:
             self.request_crypto(agent)
             return
@@ -66,6 +68,9 @@ class Agent:
         else:
             # Update the item
             reputation_item.trust_items = trust_items
+
+            # Record that we have used it
+            self.sim.es.use_reputation(reputation_item)
 
 
     def receive_crypto_information(self, agent: Agent):
