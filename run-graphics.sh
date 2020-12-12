@@ -41,13 +41,13 @@ do
 		echo "Running $ES"
 		mkdir -p "$BEHAVIOUR/$ES"
 
-		python3 -O run_simulation.py --agents $NUM_AGENTS $BEHAVIOUR --agents $NUM_BAD_AGENTS AlwaysBadBehaviour \
+		python3 run_simulation.py --agents $NUM_AGENTS $BEHAVIOUR --agents $NUM_BAD_AGENTS AlwaysBadBehaviour \
 			--num-capabilities $NUM_CAPABILITIES --duration $DURATION \
 			--max-crypto-buf 10 --max-trust-buf 20 --max-reputation-buf 10 --max-stereotype-buf 20 \
 			--eviction-strategy "$ES" --agent-choose "$AGENT_CHOOSE" --utility-targets "$UTILITY_TARGETS" \
 			--seed $SEED --path-prefix "$BEHAVIOUR/$ES/complete-" --log-level 0
 
-		#./analyse_individual.py "$BEHAVIOUR/$ES/complete-metrics.$SEED.pickle" --path-prefix "$BEHAVIOUR/$ES/complete-"
+		./analyse_individual.py "$BEHAVIOUR/$ES/complete-metrics.$SEED.pickle" --path-prefix "$BEHAVIOUR/$ES/complete-"
 	done
 
 	echo "-----------"
@@ -58,13 +58,13 @@ do
 		echo "Running $ES"
 		mkdir -p "$BEHAVIOUR/$ES"
 
-		python3 -O run_simulation.py --agents $NUM_AGENTS $BEHAVIOUR --agents $NUM_BAD_AGENTS AlwaysBadBehaviour \
+		python3 run_simulation.py --agents $NUM_AGENTS $BEHAVIOUR --agents $NUM_BAD_AGENTS AlwaysBadBehaviour \
 			--num-capabilities $NUM_CAPABILITIES --duration $DURATION \
 			--max-crypto-buf 10 --max-trust-buf 10 --max-reputation-buf 10 --max-stereotype-buf 10 \
 			--eviction-strategy "$ES" --agent-choose "$AGENT_CHOOSE" --utility-targets "$UTILITY_TARGETS" \
 			--seed $SEED --path-prefix "$BEHAVIOUR/$ES/large-" --log-level 0
 
-		#./analyse_individual.py "$BEHAVIOUR/$ES/large-metrics.$SEED.pickle" --path-prefix "$BEHAVIOUR/$ES/large-"
+		./analyse_individual.py "$BEHAVIOUR/$ES/large-metrics.$SEED.pickle" --path-prefix "$BEHAVIOUR/$ES/large-"
 	done
 
 	echo "-----------"
@@ -74,13 +74,13 @@ do
 		echo "Running $ES"
 		mkdir -p "$BEHAVIOUR/$ES"
 
-		python3 -O run_simulation.py --agents $NUM_AGENTS $BEHAVIOUR --agents $NUM_BAD_AGENTS AlwaysBadBehaviour \
+		python3 run_simulation.py --agents $NUM_AGENTS $BEHAVIOUR --agents $NUM_BAD_AGENTS AlwaysBadBehaviour \
 			--num-capabilities $NUM_CAPABILITIES --duration $DURATION \
 			--max-crypto-buf 10 --max-trust-buf 5 --max-reputation-buf 5 --max-stereotype-buf 5 \
 			--eviction-strategy "$ES" --agent-choose "$AGENT_CHOOSE" --utility-targets "$UTILITY_TARGETS" \
 			--seed $SEED --path-prefix "$BEHAVIOUR/$ES/medium-" --log-level 0
 
-		#./analyse_individual.py "$BEHAVIOUR/$ES/medium-metrics.$SEED.pickle" --path-prefix "$BEHAVIOUR/$ES/medium-"
+		./analyse_individual.py "$BEHAVIOUR/$ES/medium-metrics.$SEED.pickle" --path-prefix "$BEHAVIOUR/$ES/medium-"
 	done
 
 	echo "-----------"
@@ -91,13 +91,13 @@ do
 		echo "Running $ES"
 		mkdir -p "$BEHAVIOUR/$ES"
 
-		python3 -O run_simulation.py --agents $NUM_AGENTS $BEHAVIOUR --agents $NUM_BAD_AGENTS AlwaysBadBehaviour \
+		python3 run_simulation.py --agents $NUM_AGENTS $BEHAVIOUR --agents $NUM_BAD_AGENTS AlwaysBadBehaviour \
 			--num-capabilities $NUM_CAPABILITIES --duration $DURATION \
 			--max-crypto-buf 5 --max-trust-buf 5 --max-reputation-buf 5 --max-stereotype-buf 5 \
 			--eviction-strategy "$ES" --agent-choose "$AGENT_CHOOSE" --utility-targets "$UTILITY_TARGETS" \
 			--seed $SEED --path-prefix "$BEHAVIOUR/$ES/small-" --log-level 0
 
-		#./analyse_individual.py "$BEHAVIOUR/$ES/small-metrics.$SEED.pickle" --path-prefix "$BEHAVIOUR/$ES/small-"
+		./analyse_individual.py "$BEHAVIOUR/$ES/small-metrics.$SEED.pickle" --path-prefix "$BEHAVIOUR/$ES/small-"
 	done
 
 	echo "==========="
@@ -105,6 +105,6 @@ done
 
 echo "Analysing multiple..."
 
-#echo $BE_PRODUCT | xargs ./analyse_multiple.py
+echo $BE_PRODUCT | xargs ./analyse_multiple.py
 
 echo "Done!"
