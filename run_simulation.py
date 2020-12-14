@@ -5,10 +5,11 @@ import argparse
 from itertools import chain
 import secrets
 
-from simulation.agent import *
-from simulation.capability import *
-from simulation.eviction_strategy import *
-from simulation.events import *
+from simulation.agent import Agent
+from simulation.agent_choose_behaviour import AgentChooseBehaviour
+from simulation.capability import Capability
+from simulation.capability_behaviour import CapabilityBehaviour
+from simulation.eviction_strategy import EvictionStrategy
 from simulation.metrics import Metrics
 from simulation.simulator import Simulator
 from simulation.utility_targets import UtilityTargets
