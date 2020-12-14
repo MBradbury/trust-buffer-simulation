@@ -1,21 +1,12 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-import pickle
-import subprocess
-import itertools
-from itertools import chain
-from multiprocessing import Pool
 import functools
-from pprint import pprint
 
 import numpy as np
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-
-from simulation.metrics import Metrics
-from simulation.capability import CapabilityBehaviourState, InteractionObservation
 
 from analysis import savefig
 
@@ -28,7 +19,8 @@ def graph_space(path_prefix: str):
 
     def fn(v, c, t):
         crypto = 160 * v
-        trust = t * v + t * v * c
+        #trust = t * v + t * v * c
+        trust = t * v * c
         reputation = v * trust
         stereotype = t * v * c
 
@@ -38,6 +30,7 @@ def graph_space(path_prefix: str):
         (10, 1),
         (10, 2),
         (20, 1),
+        (20, 2),
     ]
 
     Xs = np.arange(1, 44, 1)
@@ -48,6 +41,10 @@ def graph_space(path_prefix: str):
         ax.plot(Xs, Ys, label=f"$|V|={v}$ $|C|={c}$")
 
     ax.axhline(y=32*1024, label="Zolertia RE Mote total memory", color="red")
+    ax.axhline(y=(32 - 22)*1024, label="Zolertia RE Mote available memory", color="darkred")
+
+    #ax.axhline(y=256*1024, label="nRF52840 total memory", color="red")
+    #ax.axhline(y=(256 - 22)*1024, label="nRF52840 available memory", color="darkred")
 
     ax.axvline(x=8, label="$T$ (BRS)", linestyle="--", color="tab:purple")
     ax.axvline(x=40, label="$T$ (HMM with 2 states, 2 observations)", linestyle="--", color="tab:olive")
@@ -55,7 +52,9 @@ def graph_space(path_prefix: str):
     ax.set_xlabel('Trust model size (bytes)')
     ax.set_ylabel('Total size (bytes)')
 
-    ax.legend(bbox_to_anchor=(0.45, 1.3), loc="upper center", ncol=2)
+    ax.set_ylim(top=(32+4)*1024)
+
+    ax.legend(bbox_to_anchor=(0.45, 1.325), loc="upper center", ncol=2)
 
     savefig(fig, f"{path_prefix}space.pdf")
 
