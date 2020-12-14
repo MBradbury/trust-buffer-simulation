@@ -16,23 +16,29 @@ from collections import defaultdict
 
 import numpy as np
 from scipy.stats import describe
+import pandas as pd
 
 import matplotlib as mpl
+from matplotlib import cm
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 
+import seaborn
+
 from simulation.metrics import Metrics
 from simulation.capability import CapabilityBehaviourState, InteractionObservation
+
+from combine_results import CombinedMetrics
 
 from analysis import savefig
 
 plt.rcParams['text.usetex'] = True
 plt.rcParams['font.size'] = 12
 
-def graph_utility_summary(all_metrics: Dict[str, Metrics], path_prefix: str):
+def graph_utility_summary(all_metrics: Dict[str, CombinedMetrics], path_prefix: str):
 
     all_utilities = {
-        path.split("-")[0]: [b.utility / b.max_utility for b in metrics.buffers if not np.isnan(b.utility)]
+        path.split("-")[0]: metrics.normed_utilities
         for (path, metrics) in all_metrics.items()
     }
 
@@ -54,51 +60,127 @@ def graph_utility_summary(all_metrics: Dict[str, Metrics], path_prefix: str):
     plt.close(fig)
     gc.collect()
 
-def graph_utility_summary_grouped_es(all_metrics: Dict[str, Metrics], path_prefix: str):
+# From: https://stackoverflow.com/a/61870668
+def get_box_plot_data(labels, bp):
+    rows_list = []
+
+    for i in range(len(labels)):
+        dict1 = {}
+        dict1['label'] = labels[i]
+        dict1['lower_whisker'] = bp['whiskers'][i*2].get_ydata()[1]
+        dict1['lower_quartile'] = bp['boxes'][i].get_ydata()[1]
+        dict1['median'] = bp['medians'][i].get_ydata()[1]
+        dict1['upper_quartile'] = bp['boxes'][i].get_ydata()[2]
+        dict1['upper_whisker'] = bp['whiskers'][(i*2)+1].get_ydata()[1]
+        dict1['iqr'] = dict1['upper_quartile'] - dict1['lower_quartile']
+        rows_list.append(dict1)
+
+    return pd.DataFrame(rows_list)
+
+def graph_utility_summary_grouped_es(all_metrics: Dict[str, CombinedMetrics], path_prefix: str):
 
     print(len(all_metrics))
 
     behaviours = list(sorted({path[0] for path in all_metrics.keys()}))
     sizes = list(sorted({path[-1] for path in all_metrics.keys()}))
 
-    print(behaviours)
-    print(sizes)
+    print("behaviours", behaviours)
+    print("sizes", sizes)
+
+    color = True
+    dfs = {}
 
     for behaviour, size in itertools.product(behaviours, sizes):
         print(behaviour, size)
 
         all_utilities = {
-            path[1]: [b.utility / b.max_utility for b in metrics.buffers if not np.isnan(b.utility)]
+            path[1]: metrics.normed_utilities
             for (path, metrics) in all_metrics.items()
             if path[0] == behaviour
             and path[-1] == size
         }
 
-        labels, Xs = zip(*sorted(all_utilities.items(), key=lambda x: x[0]))
+        all_utilities_medians = {
+            k: np.median(v)
+            for (k, v) in all_utilities.items()
+        }
+
+        sorted_labels = list(sorted(all_utilities.keys()))
+
+        labels, Xs = zip(*sorted(all_utilities.items(), key=lambda x: all_utilities_medians[x[0]], reverse=True))
 
         fig = plt.figure()
         ax = fig.gca()
 
-        ax.boxplot(Xs, labels=labels)
+        bp = ax.boxplot(Xs,
+                        labels=labels,
+                        showmeans=True,
+                        showfliers=False,
+                        patch_artist=color,
+                        medianprops={"color": "dimgray"},
+                        meanprops={"marker":".", "markerfacecolor":"grey", "markeredgecolor":"grey"})
+
+        if color:
+            cmap = seaborn.color_palette("husl", n_colors=len(bp['boxes']))
+
+            for i, box in enumerate(bp['boxes']):
+                box.set(facecolor="white")
+                box.set(edgecolor=cmap[sorted_labels.index(labels[i])], linewidth=2)
 
         ax.set_ylim(0, 1)
         ax.set_ylabel('Normalised Utility (\\%)')
         ax.yaxis.set_major_formatter(ticker.PercentFormatter(xmax=1, symbol=''))
+        #ax.yaxis.grid(True)
 
         ax.set_xticklabels(labels, rotation='vertical')
 
         savefig(fig, f"{path_prefix}utility-boxplot-{behaviour}-{size}.pdf")
 
+        if not color:
+            with pd.option_context('display.max_rows', None, 'display.max_columns', None, 'expand_frame_repr', False): 
+                with open(f"{path_prefix}utility-boxplot-{behaviour}-{size}.txt", "w") as f:
+                    df = get_box_plot_data(labels, bp)
+                    print(df, file=f)
+
+                    dfs[(behaviour, size)] = df
+
         plt.close(fig)
         gc.collect()
 
-def metrics_agents_capabilities(metrics: Metrics) -> tuple:
+
+    if not color:
+        #max_median_diff = [(df["median"].max(), df["median"].min()) for df in dfs.values()]
+        #print("max_median_diff", max_median_diff)
+
+        """for (k, df) in dfs.items():
+            print(k)
+            print(df.nlargest(5, "median")["median"])
+            print()"""
+
+        max_median_diff = [df["median"].max() - df["median"].min() for df in dfs.values()]
+        print("max_median_diff", max_median_diff)
+        print("max_median_diff", max(max_median_diff))
+        print("max_median_diff", np.mean(max_median_diff))
+
+        labels = {"MinNotInother", "NotInOther", "Chen2016", "FiveBand", "FIFO", "LRU", "LRU2", "Random"}
+
+        selected_dfs = [df[df["label"].isin(labels)] for df in dfs.values()]
+
+        print(selected_dfs)
+
+        max_median_diff = [df["median"].max() - df["median"].min() for df in selected_dfs]
+        print("max_median_diff", max_median_diff)
+        print("max_median_diff", max(max_median_diff))
+
+
+
+def metrics_agents_capabilities(metrics: CombinedMetrics) -> tuple:
     num_agents = sum(num_agents for (num_agents, behaviour) in args.agents)
     num_capabilities = metrics.args.num_capabilities
 
     return (num_agents, num_capabilities)
 
-def metrics_capacity(metrics: Metrics) -> float:
+def metrics_capacity(metrics: CombinedMetrics) -> float:
     num_agents = metrics.num_agents()
     num_capabilities = metrics.num_capabilities()
 
@@ -115,7 +197,7 @@ def metrics_capacity(metrics: Metrics) -> float:
     return (crypto_capacity + trust_capacity + reputation_capacity + stereotype_capacity) / 4
 
 
-def graph_capacity_utility_es(all_metrics: Dict[str, Metrics], path_prefix: str):
+def graph_capacity_utility_es(all_metrics: Dict[str, CombinedMetrics], path_prefix: str):
 
     print(len(all_metrics))
 
@@ -133,7 +215,7 @@ def graph_capacity_utility_es(all_metrics: Dict[str, Metrics], path_prefix: str)
         print(behaviour, size)
 
         data.extend(
-            (metrics_capacity(metrics), behaviour, path[1], np.median([b.utility / b.max_utility for b in metrics.buffers if not np.isnan(b.utility)]))
+            (metrics_capacity(metrics), behaviour, path[1], np.median(metrics.normed_utilities))
             for (path, metrics) in all_metrics.items()
             if path[0] == behaviour
             and path[-1] == size
@@ -165,7 +247,7 @@ def graph_capacity_utility_es(all_metrics: Dict[str, Metrics], path_prefix: str)
         plt.close(fig)
         gc.collect()
 
-def graph_size_utility_es(all_metrics: Dict[str, Metrics], path_prefix: str):
+def graph_size_utility_es(all_metrics: Dict[str, CombinedMetrics], path_prefix: str):
 
     print(len(all_metrics))
 
@@ -185,9 +267,8 @@ def graph_size_utility_es(all_metrics: Dict[str, Metrics], path_prefix: str):
             ax = axs[i, j]
 
             data = [
-                #(behaviour, size, path[1], describe())
-
-                (path[1], np.quantile([b.utility / b.max_utility for b in metrics.buffers if not np.isnan(b.utility)], [0.25,0.5,0.75]))
+                #(path[1], np.quantile([b.utility / b.max_utility for b in metrics.buffers if not np.isnan(b.utility)], [0.25,0.5,0.75]))
+                (path[1], np.quantile(metrics.normed_utilities, [0.25,0.5,0.75]))
 
                 for (path, metrics) in all_metrics.items()
                 if path[0] == behaviour
@@ -203,7 +284,6 @@ def graph_size_utility_es(all_metrics: Dict[str, Metrics], path_prefix: str):
             ax.bar(X, Ydata, yerr=mplyerr)
 
             if j == 0:
-                
                 ax.set_ylabel('Median Utility (\\%)')
             ax.set_ylim(0, 1)
             ax.yaxis.set_major_formatter(ticker.PercentFormatter(xmax=1, symbol=''))
@@ -239,7 +319,7 @@ def main(args):
         f"{metrics_dir}/{file}"
         for metrics_dir in args.metrics_dirs
         for file in os.listdir(metrics_dir)
-        if fnmatch.fnmatch(f"{metrics_dir}/{file}", "*.pickle")
+        if fnmatch.fnmatch(f"{metrics_dir}/{file}", "*.combined.pickle")
     ]
 
     all_metrics = {}
@@ -250,9 +330,9 @@ def main(args):
         with open(metrics_path, "rb") as f:
             all_metrics[metrics_path_to_details(metrics_path)] = pickle.load(f)
 
-    print("Loaded metrics!")
+    print(f"Loaded {len(all_metrics)} metrics!")
 
-    fns = [graph_capacity_utility_es, graph_utility_summary_grouped_es]
+    fns = [graph_utility_summary_grouped_es]
     fns = [wrapped_partial(fn, all_metrics, args.path_prefix) for fn in fns]
 
     print("Creating graphs...")
