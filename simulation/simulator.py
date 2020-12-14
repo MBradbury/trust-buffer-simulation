@@ -5,13 +5,10 @@ import random
 import heapq
 from typing import List
 
-from simulation.agent import *
-from simulation.capability import *
-from simulation.eviction_strategy import *
-from simulation.events import *
+from simulation.agent import Agent
+from simulation.events import AgentInit
 from simulation.metrics import Metrics
 from simulation.utility_targets import UtilityTargets
-
 
 class Simulator:
     def __init__(self, seed: int, agents: List[Agent], escls, duration: float, utility_targets: UtilityTargets, log_level: int):

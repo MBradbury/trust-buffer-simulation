@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from functools import total_ordering
 
 from simulation.constants import EPSILON
-from simulation.capability import InteractionObservation
+from simulation.capability_behaviour import InteractionObservation
 from simulation.utility_targets import UtilityTargets
 
 @total_ordering

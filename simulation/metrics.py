@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from simulation.agent import Agent
-from simulation.capability import Capability, InteractionObservation
+from simulation.capability import Capability
+from simulation.capability_behaviour import InteractionObservation
 
 import pickle
 from itertools import chain
@@ -51,7 +52,7 @@ class Metrics:
         self.interaction_performed.append((t, agent.name, capability.name))
 
     def save(self, sim, args, path_prefix: str="./"):
-        # save information from sim
+        # Save information from sim
 
         self.args = args
 
@@ -66,11 +67,6 @@ class Metrics:
             for agent in sim.agents
             for (capability, behaviour) in agent.capability_behaviour.items()
         }
-
-        #print("crypto", len(self.evicted_crypto))
-        #print("trust", len(self.evicted_trust))
-        #print("reputation", len(self.evicted_reputation))
-        #print("stereotype", len(self.evicted_stereotype))
 
         with open(f"{path_prefix}metrics.{sim.seed}.pickle", "wb") as f:
             pickle.dump(self, f, protocol=pickle.HIGHEST_PROTOCOL)
