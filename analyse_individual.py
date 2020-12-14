@@ -13,6 +13,7 @@ import numpy as np
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 
 from simulation.metrics import Metrics
 from simulation.capability import CapabilityBehaviourState, InteractionObservation
@@ -108,8 +109,9 @@ def graph_utility_scaled(metrics: Metrics, path_prefix: str):
 
     ax.set_xlabel('Time (secs)')
     ax.set_ylabel('Normalised Utility (\\%)')
+    ax.yaxis.set_major_formatter(ticker.PercentFormatter(xmax=1, symbol=''))
 
-    ax.legend(bbox_to_anchor=(1.275, 1), loc="upper right", ncol=1)
+    ax.legend(bbox_to_anchor=(1.5, 1), loc="upper right", ncol=2)
 
     savefig(fig, f"{path_prefix}norm-utility.pdf")
 
