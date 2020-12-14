@@ -212,7 +212,8 @@ class NotInOtherEvictionStrategy(EvictionStrategy):
         if selected:
             return min(selected, key=lambda x: x.eviction_data)
         else:
-            return min(choices, key=lambda x: x.eviction_data)
+            selected = [item for (item, count) in choices]
+            return min(selected, key=lambda x: x.eviction_data)
 
     def choose_crypto(self, items: List[CryptoItem], buffers: AgentBuffers, new_item: CryptoItem) -> Optional[CryptoItem]:
         choices = [
