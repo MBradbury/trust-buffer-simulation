@@ -42,7 +42,12 @@ def fn(metrics_dir, prefix, files):
 
     for file in files:
         with open(os.path.join(metrics_dir, file), "rb") as f:
-            m.update(pickle.load(f))
+            try:
+                m.update(pickle.load(f))
+            except EOFError as ex:
+                print(ex)
+                print("Skipping...")
+                continue
 
     target_file = list(files[0].split("."))
     target_file[1] = "combined"
