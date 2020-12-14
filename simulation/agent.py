@@ -1,9 +1,11 @@
 from __future__ import annotations
 
-from simulation.agent_behaviour import *
-from simulation.agent_buffers import *
-from simulation.capability import *
-from simulation.events import *
+import copy
+
+from simulation.agent_choose_behaviour import AgentChooseBehaviour
+from simulation.agent_buffers import AgentBuffers, ReputationItem, CryptoItem, TrustItem, StereotypeItem
+from simulation.capability import Capability
+from simulation.events import AgentStereotypeRequest, AgentCryptoRequest, AgentTaskInteraction
 from simulation.constants import EPSILON
 
 class Agent:
@@ -56,7 +58,8 @@ class Agent:
         if any(self.buffers.find_stereotype(agent, capability) is None for capability in self.capabilities):
             self.request_stereotype(agent)
 
-        trust_items = agent.buffers.frozen().trust
+        trust_items = copy.deepcopy(agent.buffers.trust)
+        trust_items.freeze()
 
         # Record reputation information
         reputation_item = self.buffers.find_reputation(agent)
@@ -122,6 +125,9 @@ class Agent:
         if trust_item is not None:
             trust_item.record(outcome)
 
+            # Record that we have used it
+            self.sim.es.use_trust(trust_item)
+
         self.log(f"Value of buffers after update {self.buffers.utility(self, capability, targets=[agent])} {capability}")
 
     def choose_agent_for_task(self, capability: Capability):
@@ -156,3 +162,11 @@ class Agent:
 
     def __str__(self):
         return self.name
+
+    # Can't allow this to be copied
+    def __deepcopy__(self, memo):
+        return self
+
+    # Can't allow this to be copied
+    def __copy__(self):
+        return self

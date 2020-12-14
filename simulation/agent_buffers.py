@@ -4,7 +4,8 @@ import copy
 from dataclasses import dataclass
 
 from simulation.bounded_list import BoundExceedError, BoundedList
-from simulation.capability import *
+from simulation.capability import Capability
+from simulation.capability_behaviour import InteractionObservation
 
 @dataclass
 class CryptoItem:
@@ -44,7 +45,6 @@ class TrustItem:
     def basic(self):
         return (self.agent.name, self.capability.name)
 
-
 @dataclass(repr=False)
 class ReputationItem:
     agent: Agent
@@ -80,10 +80,8 @@ class AgentBuffers:
         self.stereotype = BoundedList(length=stereotype_bux_max)
 
     def frozen(self) -> AgentBuffers:
-        f = AgentBuffers(self.agent, self.crypto.length, self.trust.length, self.reputation.length, self.stereotype.length)
-
-        for b in self.buffers:
-            getattr(f, b).extend([copy.copy(i) for i in getattr(self, b)])
+        f = copy.deepcopy(self)
+        for b in f.buffers:
             getattr(f, b).freeze()
 
         return f
