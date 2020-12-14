@@ -38,7 +38,7 @@ do
 	# No evictions
 	for ES in "${ESs[@]}"
 	do
-		echo "Running $ES"
+		echo "Running $BEHAVIOUR/$ES $SEED"
 		mkdir -p "$BEHAVIOUR/$ES"
 
 		python3 run_simulation.py --agents $NUM_AGENTS $BEHAVIOUR --agents $NUM_BAD_AGENTS AlwaysBadBehaviour \
@@ -55,7 +55,7 @@ do
 	# Some evictions
 	for ES in "${ESs[@]}"
 	do
-		echo "Running $ES"
+		echo "Running $BEHAVIOUR/$ES $SEED"
 		mkdir -p "$BEHAVIOUR/$ES"
 
 		python3 run_simulation.py --agents $NUM_AGENTS $BEHAVIOUR --agents $NUM_BAD_AGENTS AlwaysBadBehaviour \
@@ -71,7 +71,7 @@ do
 
 	for ES in "${ESs[@]}"
 	do
-		echo "Running $ES"
+		echo "Running $BEHAVIOUR/$ES $SEED"
 		mkdir -p "$BEHAVIOUR/$ES"
 
 		python3 run_simulation.py --agents $NUM_AGENTS $BEHAVIOUR --agents $NUM_BAD_AGENTS AlwaysBadBehaviour \
@@ -88,7 +88,7 @@ do
 	# Lots of evictions
 	for ES in "${ESs[@]}"
 	do
-		echo "Running $ES"
+		echo "Running $BEHAVIOUR/$ES $SEED"
 		mkdir -p "$BEHAVIOUR/$ES"
 
 		python3 run_simulation.py --agents $NUM_AGENTS $BEHAVIOUR --agents $NUM_BAD_AGENTS AlwaysBadBehaviour \
