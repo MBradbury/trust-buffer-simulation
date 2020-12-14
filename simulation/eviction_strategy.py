@@ -203,67 +203,44 @@ class NotInOtherEvictionStrategy(EvictionStrategy):
     def add_common(self, item):
         item.eviction_data = self.sim.current_time
 
-    def _lru(self, items):
-        if not items:
+    def _lru(self, choices: list):
+        if not choices:
             return None
 
-        return min(items, key=lambda x: x.eviction_data)
+        selected = [item for (item, count) in choices if count == 0]
+
+        if selected:
+            return min(selected, key=lambda x: x.eviction_data)
+        else:
+            return min(choices, key=lambda x: x.eviction_data)
 
     def choose_crypto(self, items: List[CryptoItem], buffers: AgentBuffers, new_item: CryptoItem) -> Optional[CryptoItem]:
-        if not items:
-            return None
-
         choices = [
-            item
+            (item, buffers.buffer_has_agent_count(item.agent, "TRS"))
             for item in items
-            if buffers.buffer_has_agent_count(item.agent, "TRS") == 0
         ]
-        if choices:
-            return self._lru(choices)
-
-        return self._lru(items)
+        return self._lru(choices)
 
     def choose_trust(self, items: List[TrustItem], buffers: AgentBuffers, new_item: TrustItem) -> Optional[TrustItem]:
-        if not items:
-            return None
-
         choices = [
-            item
+            (item, buffers.buffer_has_agent_capability_count(item.agent, item.capability, "CRS"))
             for item in items
-            if buffers.buffer_has_agent_capability_count(item.agent, item.capability, "CRS") == 0
         ]
-        if choices:
-            return self._lru(choices)
-
-        return self._lru(items)
+        return self._lru(choices)
 
     def choose_reputation(self, items: List[ReputationItem], buffers: AgentBuffers, new_item: ReputationItem) -> Optional[ReputationItem]:
-        if not items:
-            return None
-
         choices = [
-            item
+            (item, sum(buffers.buffer_has_agent_capability_count(trust_item.agent, trust_item.capability, "CTS") for trust_item in item.trust_items))
             for item in items
-            if all(buffers.buffer_has_agent_capability_count(trust_item.agent, trust_item.capability, "CTS") == 0 for trust_item in item.trust_items)
         ]
-        if choices:
-            return self._lru(choices)
-
-        return self._lru(items)
+        return self._lru(choices)
 
     def choose_stereotype(self, items: List[StereotypeItem], buffers: AgentBuffers, new_item: StereotypeItem) -> Optional[StereotypeItem]:
-        if not items:
-            return None
-
         choices = [
-            item
+            (item, buffers.buffer_has_agent_capability_count(item.agent, item.capability, "CTR"))
             for item in items
-            if buffers.buffer_has_agent_capability_count(item.agent, item.capability, "CTR") == 0
         ]
-        if choices:
-            return self._lru(choices)
-
-        return self._lru(items)
+        return self._lru(choices)
 
     def use_common(self, item):
         if item is None:
@@ -278,7 +255,7 @@ class MinNotInOtherEvictionStrategy(EvictionStrategy):
     def add_common(self, item):
         item.eviction_data = self.sim.current_time
 
-    def _lru(self, choices):
+    def _lru(self, choices: list):
         if not choices:
             return None
 
@@ -289,47 +266,31 @@ class MinNotInOtherEvictionStrategy(EvictionStrategy):
         return min(selected, key=lambda x: x.eviction_data)
 
     def choose_crypto(self, items: List[CryptoItem], buffers: AgentBuffers, new_item: CryptoItem) -> Optional[CryptoItem]:
-        if not items:
-            return None
-
         choices = [
             (item, buffers.buffer_has_agent_count(item.agent, "TRS"))
             for item in items
         ]
-
         return self._lru(choices)
 
     def choose_trust(self, items: List[TrustItem], buffers: AgentBuffers, new_item: TrustItem) -> Optional[TrustItem]:
-        if not items:
-            return None
-
         choices = [
             (item, buffers.buffer_has_agent_capability_count(item.agent, item.capability, "CRS"))
             for item in items
         ]
-
         return self._lru(choices)
 
     def choose_reputation(self, items: List[ReputationItem], buffers: AgentBuffers, new_item: ReputationItem) -> Optional[ReputationItem]:
-        if not items:
-            return None
-
         choices = [
             (item, sum(buffers.buffer_has_agent_capability_count(trust_item.agent, trust_item.capability, "CTS") for trust_item in item.trust_items))
             for item in items
         ]
-
         return self._lru(choices)
 
     def choose_stereotype(self, items: List[StereotypeItem], buffers: AgentBuffers, new_item: StereotypeItem) -> Optional[StereotypeItem]:
-        if not items:
-            return None
-
         choices = [
             (item, buffers.buffer_has_agent_capability_count(item.agent, item.capability, "CTR"))
             for item in items
         ]
-
         return self._lru(choices)
 
     def use_common(self, item):
@@ -345,7 +306,7 @@ class CapabilityPriorityEvictionStrategy(EvictionStrategy):
     def add_common(self, item):
         item.eviction_data = self.sim.current_time
 
-    def _lru(self, items):
+    def _lru(self, items: list):
         if not items:
             return None
 
