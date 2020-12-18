@@ -120,7 +120,7 @@ class Agent:
             self.buffers.add_trust(self.sim.es, new_trust_item)
 
             trust_item = self.buffers.find_trust(agent, capability)
-            assert trust_item is new_trust_item
+            assert trust_item is new_trust_item or trust_item is None
 
         if trust_item is not None:
             trust_item.record(outcome)
