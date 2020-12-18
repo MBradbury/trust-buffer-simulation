@@ -26,6 +26,11 @@ python3 -m pip install matplotlib numpy scipy hmmlearn tqdm pygraphviz seaborn
 python3 run_multiple.py
 ```
 
+To perform a run with a specific seed call `run.sh` or `run-graphics.sh` such as:
+```bash
+SEED=10 ./run.sh
+```
+
 # Analysing Results
 
 ## Graphing Individual Results
