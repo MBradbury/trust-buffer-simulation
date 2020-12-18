@@ -77,23 +77,29 @@ class AgentTaskInteraction(BaseEvent):
         if crypto is None:
             agent.receive_crypto_information(other)
             crypto = agent.buffers.find_crypto(other)
-            assert crypto is not None
-        sim.es.use_crypto(crypto)
+        if crypto is not None:
+            sim.es.use_crypto(crypto)
+        return crypto is not None
 
     def action(self, sim: Simulation):
         super().action(sim)
 
         # Source needs target's crypto information to process response
-        self._ensure_crypto_exists(sim, self.source, self.target)
+        our_crypto = self._ensure_crypto_exists(sim, self.source, self.target)
+        assert our_crypto
 
         # Target also needs sources's crypto information to process response
-        self._ensure_crypto_exists(sim, self.target, self.source)
+        their_crypto = self._ensure_crypto_exists(sim, self.target, self.source)
 
         # Want to use the same seed for the interaction that does occur and the potential interactions
         seed = sim.rng.getrandbits(32)
 
         # Did the target perform the interaction well?
         outcome = self.target.capability_behaviour[self.capability].next_interaction(seed, sim.current_time)
+
+        # Override interaction result if the target doesn't have our keys
+        if not their_crypto:
+            outcome = InteractionObservation.Incorrect
 
         # How would the other capabilities have performed?
         outcomes = {
