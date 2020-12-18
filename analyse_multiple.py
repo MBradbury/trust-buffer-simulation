@@ -1,18 +1,15 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-import pickle
-import subprocess
+import bz2
 import itertools
-from itertools import chain
-from multiprocessing import Pool
 import functools
-from pprint import pprint
 import os
 import fnmatch
 from typing import Dict
 import gc
 from collections import defaultdict
+import pickle
 
 import numpy as np
 from scipy.stats import describe
@@ -25,12 +22,8 @@ import matplotlib.ticker as ticker
 
 import seaborn
 
-from simulation.metrics import Metrics
-from simulation.capability import CapabilityBehaviourState, InteractionObservation
-
-from combine_results import CombinedMetrics
-
 from analysis import savefig
+from combine_results import CombinedMetrics
 
 plt.rcParams['text.usetex'] = True
 plt.rcParams['font.size'] = 12
@@ -248,9 +241,6 @@ def graph_capacity_utility_es(all_metrics: Dict[str, CombinedMetrics], path_pref
         gc.collect()
 
 def graph_size_utility_es(all_metrics: Dict[str, CombinedMetrics], path_prefix: str):
-
-    print(len(all_metrics))
-
     behaviours = list(sorted({path[0] for path in all_metrics.keys()}))
     sizes = list(sorted({path[-1] for path in all_metrics.keys()}))
 
@@ -319,7 +309,7 @@ def main(args):
         f"{metrics_dir}/{file}"
         for metrics_dir in args.metrics_dirs
         for file in os.listdir(metrics_dir)
-        if fnmatch.fnmatch(f"{metrics_dir}/{file}", "*.combined.pickle")
+        if fnmatch.fnmatch(f"{metrics_dir}/{file}", "*.combined.pickle.bz2")
     ]
 
     all_metrics = {}
@@ -327,7 +317,7 @@ def main(args):
     print("Loading metrics...")
 
     for metrics_path in metrics_paths:
-        with open(metrics_path, "rb") as f:
+        with bz2.open(metrics_path, "rb") as f:
             all_metrics[metrics_path_to_details(metrics_path)] = pickle.load(f)
 
     print(f"Loaded {len(all_metrics)} metrics!")
@@ -337,8 +327,6 @@ def main(args):
 
     print("Creating graphs...")
 
-    #with Pool(4) as p:
-    #    p.map(call, fns)
     for fn in fns:
         call(fn)
 

@@ -1,24 +1,28 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import os
 import pickle
 import subprocess
 import itertools
 from itertools import chain
-from multiprocessing import Pool
+import multiprocessing
 import functools
 from pprint import pprint
+import bz2
 
 import numpy as np
 
 import matplotlib as mpl
+import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 
-from simulation.metrics import Metrics
-from simulation.capability import CapabilityBehaviourState, InteractionObservation
+import seaborn
 
 from analysis import savefig
+from simulation.metrics import Metrics
+from simulation.capability_behaviour import CapabilityBehaviourState, InteractionObservation
 
 plt.rcParams['text.usetex'] = True
 plt.rcParams['font.size'] = 12
@@ -114,6 +118,44 @@ def graph_utility_scaled(metrics: Metrics, path_prefix: str):
     ax.legend(bbox_to_anchor=(1.5, 1), loc="upper right", ncol=2)
 
     savefig(fig, f"{path_prefix}norm-utility.pdf")
+
+    plt.close(fig)
+
+def graph_utility_scaled_cap_colour(metrics: Metrics, path_prefix: str):
+    fig = plt.figure()
+    ax = fig.gca()
+
+    sources_utilities = {(b.source, b.capability) for b in metrics.buffers}
+
+    grouped_utility = {
+        (asrc, acap): [
+            (b.t, b.utility / b.max_utility)
+
+            for b in metrics.buffers
+            if asrc == b.source and acap == b.capability
+        ]
+        for (asrc, acap) in sources_utilities
+    }
+
+    sequential_cmaps = [seaborn.mpl_palette(name, n_colors=len(metrics.agent_names)) for name in ("Greens", "Purples")]
+    cmap_for_cap = {
+        c: sequential_cmaps[c]
+        for c in {int(c[1:]) for c in metrics.capability_names}
+    }
+
+    for ((src, cap), utilities) in sorted(grouped_utility.items(), key=lambda x: x[0]):
+        X, Y = zip(*utilities)
+        ax.plot(X, Y, label=f"{src} {cap}", color=cmap_for_cap[int(cap[1:])][metrics.agent_names.index(src)])
+
+    ax.set_ylim(0, 1)
+
+    ax.set_xlabel('Time (secs)')
+    ax.set_ylabel('Normalised Utility (\\%)')
+    ax.yaxis.set_major_formatter(ticker.PercentFormatter(xmax=1, symbol=''))
+
+    ax.legend(bbox_to_anchor=(1.5, 1), loc="upper right", ncol=2)
+
+    savefig(fig, f"{path_prefix}norm-utility-cc.pdf")
 
     plt.close(fig)
 
@@ -380,16 +422,18 @@ def call(fn):
     fn()
 
 def main(args):
-    with open(args.metrics_path, "rb") as f:
+    with bz2.open(args.metrics_path, "rb") as f:
         metrics = pickle.load(f)
 
-    fns = [graph_utility, graph_max_utility, graph_utility_scaled, graph_utility_max_distance,
+    fns = [graph_utility, graph_max_utility, graph_utility_scaled, graph_utility_scaled_cap_colour, graph_utility_max_distance,
            graph_behaviour_state, graph_interactions, graph_interactions_utility_hist,
            #graph_evictions,
            graph_interactions_performed]
     fns = [functools.partial(fn, metrics, args.path_prefix) for fn in fns]
 
-    with Pool(4) as p:
+    usable_cpus = len(os.sched_getaffinity(0))
+
+    with multiprocessing.Pool(min(usable_cpus, len(fns))) as p:
         p.map(call, fns)
 
 if __name__ == "__main__":

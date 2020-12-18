@@ -3,13 +3,16 @@ from __future__ import annotations
 
 import pickle
 import subprocess
-from multiprocessing import Pool
+import multiprocessing
 import functools
 from pprint import pprint
 import math
+import bz2
+import tqdm
+import os
 
 from analysis import savefig
-from simulation.capability import InteractionObservation
+from simulation.capability_behaviour import InteractionObservation
 from simulation.metrics import Metrics
 
 from pygraphviz import *
@@ -99,8 +102,6 @@ def graph_buffer(metrics: Metrics, path_prefix: str, n, total_n, tb):
 
 
 def graph_buffer_direct(metrics: Metrics, path_prefix: str, n, total_n, tb):
-    print(f"{n}/{total_n}")
-
     p = AGraph(label=f"({tb.source} {tb.capability}) generating task, utility={tb.utility}")
 
     # Add buffer nodes
@@ -190,7 +191,7 @@ def call(fn):
     fn()
 
 def main(args):
-    with open(args.metrics_path, "rb") as f:
+    with bz2.open(args.metrics_path, "rb") as f:
         metrics = pickle.load(f)
 
     fns = [
@@ -198,8 +199,13 @@ def main(args):
         for (n, b) in enumerate(metrics.buffers)
     ]
 
-    with Pool(4) as p:
-        p.map(call, fns)
+    usable_cpus = len(os.sched_getaffinity(0))
+
+    print(f"Running with {usable_cpus} processes")
+
+    with multiprocessing.Pool(usable_cpus) as pool:
+        for _ in tqdm.tqdm(pool.imap_unordered(call, fns), total=len(fns)):
+            pass
 
 if __name__ == "__main__":
     import argparse

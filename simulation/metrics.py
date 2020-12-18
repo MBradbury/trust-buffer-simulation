@@ -4,9 +4,10 @@ from simulation.agent import Agent
 from simulation.capability import Capability
 from simulation.capability_behaviour import InteractionObservation
 
-import pickle
+import bz2
 from itertools import chain
 from dataclasses import dataclass
+import pickle
 
 @dataclass
 class BufferEvaluation:
@@ -68,7 +69,7 @@ class Metrics:
             for (capability, behaviour) in agent.capability_behaviour.items()
         }
 
-        with open(f"{path_prefix}metrics.{sim.seed}.pickle", "wb") as f:
+        with bz2.open(f"{path_prefix}metrics.{sim.seed}.pickle.bz2", "wb") as f:
             pickle.dump(self, f, protocol=pickle.HIGHEST_PROTOCOL)
 
     def num_agents(self) -> int:
