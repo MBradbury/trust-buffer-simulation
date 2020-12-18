@@ -7,11 +7,9 @@ function ctrl_c() {
 
 trap ctrl_c SIGINT
 
-BEHAVIOURS=("GoodBehaviour" "UnstableBehaviour" "AlwaysGoodBehaviour" "VeryGoodBehaviour")
+BEHAVIOURS=("VeryGoodBehaviour" "UnstableBehaviour" "GoodBehaviour" "AlwaysGoodBehaviour")
 
 ESs=("CapPri" "None" "LRU" "LRU2" "Random" "FIFO" "MRU" "Chen2016" "FiveBand" "NotInOther" "MinNotInOther")
-
-#rm -f *.pdf
 
 if [ -z "$SEED" ]
 then
@@ -46,8 +44,6 @@ do
 			--max-crypto-buf 10 --max-trust-buf 20 --max-reputation-buf 10 --max-stereotype-buf 20 \
 			--eviction-strategy "$ES" --agent-choose "$AGENT_CHOOSE" --utility-targets "$UTILITY_TARGETS" \
 			--seed $SEED --path-prefix "$BEHAVIOUR/$ES/complete-" --log-level 0
-
-		#./analyse_individual.py "$BEHAVIOUR/$ES/complete-metrics.$SEED.pickle" --path-prefix "$BEHAVIOUR/$ES/complete-"
 	done
 
 	echo "-----------"
@@ -63,8 +59,6 @@ do
 			--max-crypto-buf 10 --max-trust-buf 10 --max-reputation-buf 10 --max-stereotype-buf 10 \
 			--eviction-strategy "$ES" --agent-choose "$AGENT_CHOOSE" --utility-targets "$UTILITY_TARGETS" \
 			--seed $SEED --path-prefix "$BEHAVIOUR/$ES/large-" --log-level 0
-
-		#./analyse_individual.py "$BEHAVIOUR/$ES/large-metrics.$SEED.pickle" --path-prefix "$BEHAVIOUR/$ES/large-"
 	done
 
 	echo "-----------"
@@ -79,8 +73,34 @@ do
 			--max-crypto-buf 10 --max-trust-buf 5 --max-reputation-buf 5 --max-stereotype-buf 5 \
 			--eviction-strategy "$ES" --agent-choose "$AGENT_CHOOSE" --utility-targets "$UTILITY_TARGETS" \
 			--seed $SEED --path-prefix "$BEHAVIOUR/$ES/medium-" --log-level 0
+	done
 
-		#./analyse_individual.py "$BEHAVIOUR/$ES/medium-metrics.$SEED.pickle" --path-prefix "$BEHAVIOUR/$ES/medium-"
+	echo "-----------"
+
+	for ES in "${ESs[@]}"
+	do
+		echo "Running $BEHAVIOUR/$ES $SEED"
+		mkdir -p "$BEHAVIOUR/$ES"
+
+		python3 -O run_simulation.py --agents $NUM_AGENTS $BEHAVIOUR --agents $NUM_BAD_AGENTS AlwaysBadBehaviour \
+			--num-capabilities $NUM_CAPABILITIES --duration $DURATION \
+			--max-crypto-buf 5 --max-trust-buf 10 --max-reputation-buf 5 --max-stereotype-buf 5 \
+			--eviction-strategy "$ES" --agent-choose "$AGENT_CHOOSE" --utility-targets "$UTILITY_TARGETS" \
+			--seed $SEED --path-prefix "$BEHAVIOUR/$ES/medium2-" --log-level 0
+	done
+
+	echo "-----------"
+
+	for ES in "${ESs[@]}"
+	do
+		echo "Running $BEHAVIOUR/$ES $SEED"
+		mkdir -p "$BEHAVIOUR/$ES"
+
+		python3 -O run_simulation.py --agents $NUM_AGENTS $BEHAVIOUR --agents $NUM_BAD_AGENTS AlwaysBadBehaviour \
+			--num-capabilities $NUM_CAPABILITIES --duration $DURATION \
+			--max-crypto-buf 5 --max-trust-buf 5 --max-reputation-buf 5 --max-stereotype-buf 10 \
+			--eviction-strategy "$ES" --agent-choose "$AGENT_CHOOSE" --utility-targets "$UTILITY_TARGETS" \
+			--seed $SEED --path-prefix "$BEHAVIOUR/$ES/medium4-" --log-level 0
 	done
 
 	echo "-----------"
@@ -96,15 +116,9 @@ do
 			--max-crypto-buf 5 --max-trust-buf 5 --max-reputation-buf 5 --max-stereotype-buf 5 \
 			--eviction-strategy "$ES" --agent-choose "$AGENT_CHOOSE" --utility-targets "$UTILITY_TARGETS" \
 			--seed $SEED --path-prefix "$BEHAVIOUR/$ES/small-" --log-level 0
-
-		#./analyse_individual.py "$BEHAVIOUR/$ES/small-metrics.$SEED.pickle" --path-prefix "$BEHAVIOUR/$ES/small-"
 	done
 
 	echo "==========="
 done
-
-echo "Analysing multiple..."
-
-#echo $BE_PRODUCT | xargs ./analyse_multiple.py
 
 echo "Done!"
