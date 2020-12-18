@@ -8,7 +8,7 @@ import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 
-from analysis import savefig
+from utils.graphing import savefig
 
 plt.rcParams['text.usetex'] = True
 plt.rcParams['font.size'] = 12

@@ -11,7 +11,7 @@ import bz2
 import tqdm
 import os
 
-from analysis import savefig
+from utils.graphing import savefig
 from simulation.capability_behaviour import InteractionObservation
 from simulation.metrics import Metrics
 

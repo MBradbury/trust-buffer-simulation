@@ -22,7 +22,7 @@ import matplotlib.ticker as ticker
 
 import seaborn
 
-from analysis import savefig
+from utils.graphing import savefig
 from combine_results import CombinedMetrics
 
 plt.rcParams['text.usetex'] = True
