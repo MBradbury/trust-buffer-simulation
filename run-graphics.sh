@@ -47,7 +47,7 @@ do
 			--eviction-strategy "$ES" --agent-choose "$AGENT_CHOOSE" --utility-targets "$UTILITY_TARGETS" \
 			--seed $SEED --path-prefix "$BEHAVIOUR/$ES/complete-" --log-level 0
 
-		./analyse_individual.py "$BEHAVIOUR/$ES/complete-metrics.$SEED.pickle" --path-prefix "$BEHAVIOUR/$ES/complete-"
+		./graph_individual.py "$BEHAVIOUR/$ES/complete-metrics.$SEED.pickle" --path-prefix "$BEHAVIOUR/$ES/complete-"
 	done
 
 	echo "-----------"
@@ -64,7 +64,7 @@ do
 			--eviction-strategy "$ES" --agent-choose "$AGENT_CHOOSE" --utility-targets "$UTILITY_TARGETS" \
 			--seed $SEED --path-prefix "$BEHAVIOUR/$ES/large-" --log-level 0
 
-		./analyse_individual.py "$BEHAVIOUR/$ES/large-metrics.$SEED.pickle" --path-prefix "$BEHAVIOUR/$ES/large-"
+		./graph_individual.py "$BEHAVIOUR/$ES/large-metrics.$SEED.pickle" --path-prefix "$BEHAVIOUR/$ES/large-"
 	done
 
 	echo "-----------"
@@ -80,7 +80,7 @@ do
 			--eviction-strategy "$ES" --agent-choose "$AGENT_CHOOSE" --utility-targets "$UTILITY_TARGETS" \
 			--seed $SEED --path-prefix "$BEHAVIOUR/$ES/medium-" --log-level 0
 
-		./analyse_individual.py "$BEHAVIOUR/$ES/medium-metrics.$SEED.pickle" --path-prefix "$BEHAVIOUR/$ES/medium-"
+		./graph_individual.py "$BEHAVIOUR/$ES/medium-metrics.$SEED.pickle" --path-prefix "$BEHAVIOUR/$ES/medium-"
 	done
 
 	echo "-----------"
@@ -97,7 +97,7 @@ do
 			--eviction-strategy "$ES" --agent-choose "$AGENT_CHOOSE" --utility-targets "$UTILITY_TARGETS" \
 			--seed $SEED --path-prefix "$BEHAVIOUR/$ES/small-" --log-level 0
 
-		./analyse_individual.py "$BEHAVIOUR/$ES/small-metrics.$SEED.pickle" --path-prefix "$BEHAVIOUR/$ES/small-"
+		./graph_individual.py "$BEHAVIOUR/$ES/small-metrics.$SEED.pickle" --path-prefix "$BEHAVIOUR/$ES/small-"
 	done
 
 	echo "==========="
@@ -105,6 +105,6 @@ done
 
 echo "Analysing multiple..."
 
-echo $BE_PRODUCT | xargs ./analyse_multiple.py
+echo $BE_PRODUCT | xargs ./graph_multiple.py
 
 echo "Done!"

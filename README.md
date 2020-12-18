@@ -33,7 +33,7 @@ python3 run_multiple.py
 `./analyse_individual.py` create graphs for a single simulation.
 
 ```bash
-./analyse_individual.py <Behaviour>/<Eviction Strategy>/<buffer size>-metrics.<seed>.pickle.bz2
+./graph_individual.py <Behaviour>/<Eviction Strategy>/<buffer size>-metrics.<seed>.pickle.bz2
 ```
 
 ## Combining Results
@@ -47,7 +47,7 @@ Individual results need to be combined for them to be graphed
 ## Graphing Combined Results
 
 ```bash
-./analyse_multiple.py VeryGoodBehaviour/* AlwaysGoodBehaviour/* UnstableBehaviour/* GoodBehaviour/*
+./graph_multiple.py VeryGoodBehaviour/* AlwaysGoodBehaviour/* UnstableBehaviour/* GoodBehaviour/*
 ```
 
 ## Creating a graph showing space usage
