@@ -17,107 +17,51 @@ from simulation.metrics import Metrics
 
 from pygraphviz import *
 
-def graph_buffer(metrics: Metrics, path_prefix: str, n, total_n, tb):
-    print(f"{n}/{total_n}")
+import more_itertools
 
-    p = AGraph(label=f"({tb.source} {tb.capability}) generating task, utility={tb.utility}")
+def check_fonts(path: str):
+    r = subprocess.run(f"pdffonts {path}",
+        shell=True,
+        check=True,
+        capture_output=True,
+        universal_newlines=True,
+        encoding="utf-8",
+    )
 
-    # Add agents and capabilities
-    for agent in metrics.agent_names:
-        for capability in metrics.capability_names:
-            if capability == tb.capability:
+    if "Type 3" in r.stdout:
+        raise RuntimeError(f"Type 3 font in {path}")
 
-                if agent == tb.source:
-                    p.add_node(f"{agent} {capability}", color="blue", penwidth=4)
+buffer_colours = {
+    "crypto": "#9467BD", #"darkorchid1",
+    "trust": "#1F77B4", #"darkkhaki",
+    "reputation": "#FF7F0E", #darkseagreen3",
+    "stereotype": "#BCBD22", #"darkslategray2",
+}
 
-                elif tb.outcomes[agent] == InteractionObservation.Incorrect:
-                    p.add_node(f"{agent} {capability}", color="red", penwidth=4)
+node_sizes = {
+    "crypto": {"fixedsize": "true", "height": "1.2", "width": "1.2"},
+    "trust": {"fixedsize": "true", "height": "1.2", "width": "1.2"},
+    "reputation": {},
+    "stereotype": {"fixedsize": "true", "height": "1.65", "width": "1.65"},
+}
 
-                elif tb.outcomes[agent] == InteractionObservation.Correct:
-                    p.add_node(f"{agent} {capability}", color="green", penwidth=4)
-
-                else:
-                    raise RuntimeError()
-
-            else:
-                if agent == tb.source:
-                    p.add_node(f"{agent} {capability}", color="cornflowerblue", penwidth=4)
-                else:
-                    p.add_node(f"{agent} {capability}", color="grey", penwidth=4)
-
-        p.add_subgraph([f"{agent} {capability}" for capability in metrics.capability_names], name=f"cluster_{agent}")
-
-    # Add buffer nodes
-
-    buffer_sizes = {
-        "crypto": metrics.args.max_crypto_buf,
-        "trust": metrics.args.max_trust_buf,
-        "reputation": metrics.args.max_reputation_buf,
-        "stereotype": metrics.args.max_stereotype_buf,
-    }
-
-    buffer_colours = {
-        "crypto": "darkorchid1",
-        "trust": "darkkhaki",
-        "reputation": "darkseagreen3",
-        "stereotype": "darkslategray2",
-    }
-
-    for (name, items) in tb.buffers.items():
-
-        # The items will be shorter than their maximum capacity, so lets add it in now:
-        true_size = buffer_sizes[name]
-
-        for i in range(true_size):
-            p.add_node(f"{name} {i}", shape="square", color=buffer_colours[name], penwidth=3)
-
-        p.add_subgraph([f"{name} {i}" for i in range(true_size)], name=f"cluster_{name}")
-
-        if name == "crypto":
-            for (i, item) in enumerate(items):
-                for capability in metrics.capability_names:
-                    p.add_edge(f"{name} {i}", f"{item[0]} {capability}", color=buffer_colours[name], penwidth=3)
-
-        elif name == "trust":
-            for (i, item) in enumerate(items):
-                p.add_edge(f"{name} {i}", f"{item[0]} {item[1]}", color=buffer_colours[name], penwidth=3)
-
-        elif name == "stereotype":
-            for (i, item) in enumerate(items):
-                p.add_edge(f"{name} {i}", f"{item[0]} {item[1]}", color=buffer_colours[name], penwidth=3)
-
-        elif name == "reputation":
-            for (i, (a, alinks)) in enumerate(items):
-                for alink in alinks:
-                    p.add_edge(f"{name} {i}", f"{alink[0]} {alink[1]}", color=buffer_colours[name], penwidth=3)
-
-        else:
-            pass
-
-    pad = math.ceil(math.log10(total_n))
-      
-    p.layout("sfdp")
-    #p.layout("neato")
-    p.draw(f'{path_prefix}Topology-{str(n).zfill(pad)}-{tb.t}.pdf')
-
-
-def graph_buffer_direct(metrics: Metrics, path_prefix: str, n, total_n, tb):
-    p = AGraph(label=f"({tb.source} {tb.capability}) generating task, utility={tb.utility}")
-
-    # Add buffer nodes
+def graph_buffer_direct(metrics: Metrics, path_prefix: str, n: int, total_n: int, tb):
+    p = AGraph(
+        label=f"({tb.source} {tb.capability}) generating task, utility={tb.utility}",
+        margin="0",
+        ratio="0.5",
+        overlap="voronoi",
+        splines="curved",
+        outputorder="edgesfirst",
+        K=0.125,
+        fontsize=36,
+    )
 
     buffer_sizes = {
         "crypto": metrics.args.max_crypto_buf,
         "trust": metrics.args.max_trust_buf,
         "reputation": metrics.args.max_reputation_buf,
         "stereotype": metrics.args.max_stereotype_buf,
-    }
-
-    buffer_colours = {
-        "crypto": "darkorchid1",
-        "trust": "darkkhaki",
-        "reputation": "darkseagreen3",
-        "stereotype": "darkslategray2",
     }
 
     def edge_colour(x):
@@ -125,31 +69,77 @@ def graph_buffer_direct(metrics: Metrics, path_prefix: str, n, total_n, tb):
 
         if capability == tb.capability:
             if tb.outcomes[agent] == InteractionObservation.Incorrect:
-                return "red"
+                return "#D62728"
             elif tb.outcomes[agent] == InteractionObservation.Correct:
-                return "green"
+                return "#2CA02C"
             else:
                 return None
 
         else:
             if agent == tb.source:
-                return "cornflowerblue"
+                return "#17BECF"
             else:
-                return "grey"
+                return "#7F7F7F"
+
+    def format_item_label(name, x):
+        if name == "crypto":
+            return x[0]
+        elif name == "reputation":
+            # This one is a pain as it can be quite long
+            result = f"Provided by: {x[0]}\\n"
+
+            if len(x[1]) < 2:
+                [curr_item] = x[1]
+                result += f"- {curr_item[0]} {curr_item[1]}"
+            else:
+                reputation_items = []
+                skip_next = False
+                for (curr_item, next_item) in more_itertools.pairwise(sorted(x[1])):
+                    if skip_next:
+                        skip_next = False
+                        continue
+
+                    if curr_item[0] == next_item[0] and curr_item[1] != next_item[1]:
+                        reputation_items.append(f"- {curr_item[0]} {curr_item[1]} - {next_item[0]} {next_item[1]}")
+                        skip_next = True
+                    else:
+                        reputation_items.append(f"- {curr_item[0]} {curr_item[1]}")
+
+                result += "\\n".join(reputation_items) #+ "\nActual:\n" + "\n".join(str(x) for x in sorted(x[1]))
+            return result
+        else:
+            return f"{x[0]} {x[1]}"
 
     for (name, items) in tb.buffers.items():
 
         # The items will be shorter than their maximum capacity, so lets add it in now:
         true_size = buffer_sizes[name]
 
+        sp = p # p.add_subgraph(name=f"cluster_{name}", label=name.title())
+
         for i in range(true_size):
-            p.add_node(f"{name} {i}", shape="square", color=buffer_colours[name], penwidth=3)
+            style = {
+                "color": buffer_colours[name],
+                "penwidth": 4,
+                "shape": "square",
+                "style": "rounded",
+                "fontsize": 16,
+                **node_sizes[name],
+            }
 
-        p.add_subgraph([f"{name} {i}" for i in range(true_size)], name=f"cluster_{name}")
+            # Fill the node in if it contains a value
+            if i < len(items):
+                style["fillcolor"] = "#DDDDDDD0"
+                style["style"] = "rounded,filled"
+                style["label"] = f"{name} {i}\\n{format_item_label(name, items[i])}"
 
+            sp.add_node(f"{name} {i}", **style)
+
+        # Don't want links from crypto
         if name == "crypto":
-            items = [(i, (item[0], capability)) for (i, item) in enumerate(items) for capability in metrics.capability_names]
-        elif name == "reputation":
+            continue
+            
+        if name == "reputation":
             items = [(i, uitem) for (i, (usrc, uitems)) in enumerate(items) for uitem in uitems]
         else:
             items = list(enumerate(items))
@@ -162,12 +152,7 @@ def graph_buffer_direct(metrics: Metrics, path_prefix: str, n, total_n, tb):
             if nameb != "crypto":
                 continue
 
-            if nameb == "crypto":
-                itemsb = [(i, (item[0], capability)) for (i, item) in enumerate(itemsb) for capability in metrics.capability_names]
-            elif nameb == "reputation":
-                itemsb = [(i, uitem) for (i, (usrc, uitems)) in enumerate(itemsb) for uitem in uitems]
-            else:
-                itemsb = list(enumerate(itemsb))
+            itemsb = [(i, (item[0], capability)) for (i, item) in enumerate(itemsb) for capability in metrics.capability_names]
 
             for (a, itema) in items:
                 for (b, itemb) in itemsb:
@@ -179,13 +164,110 @@ def graph_buffer_direct(metrics: Metrics, path_prefix: str, n, total_n, tb):
                     assert itemb[1][0] == "C"
 
                     if itema == itemb:
-                        p.add_edge(f"{name} {a}", f"{nameb} {b}", label=f"{itema[0]} {itema[1]}", color=edge_colour(itema), penwidth=2)
+                        sp.add_edge(f"{name} {a}", f"{nameb} {b}", color=edge_colour(itema), penwidth=2) # label=f"{itema[0]} {itema[1]}", 
 
     pad = math.ceil(math.log10(total_n))
 
-    p.layout("sfdp")
-    #p.layout("neato")
-    p.draw(f'{path_prefix}Topology-{str(n).zfill(pad)}-{tb.t}.pdf')
+    output_file = f'{path_prefix}Topology-{str(n).zfill(pad)}-{tb.t}.pdf'
+
+    p.layout("fdp")
+    #p.layout("dot")
+    p.draw(output_file)
+    #p.draw(output_file[:-4] + ".gv")
+    #p.draw(output_file[:-4] + ".svg")
+
+    subprocess.run(f"pdfcrop {output_file} {output_file}", check=True, shell=True, stdout=subprocess.DEVNULL)
+
+    check_fonts(output_file)
+
+def graph_legend(metrics: Metrics, path_prefix: str):
+    p = AGraph(
+        margin="0",
+        #ratio="0.5",
+        #overlap="voronoi",
+        #splines="curved",
+        #outputorder="edgesfirst",
+        #K=0.125,
+        n=2,
+        forcelabels=True,
+        fontsize=16,
+        label=f"Agent A0 generating task for service C0, A1 behaves correctly, A2 behaves incorrectly",
+    )
+
+    # Nodes
+    for (i, name) in enumerate(buffer_colours.keys()):
+        style = {
+            "color": buffer_colours[name],
+            "penwidth": 4,
+            "shape": "square",
+            "style": "rounded",
+            "fontsize": 16,
+            **node_sizes[name],
+            "label": f"{name}\\nempty",
+            "pos": f"{i*4},0!",
+        }
+
+        p.add_node(f"{name} empty", **style)
+
+        style["fillcolor"] = "#DDDDDDD0"
+        style["style"] = "rounded,filled"
+        style["label"] = f"{name}\\nfilled"
+        style["pos"] = f"{i*4 + 2},0!"
+
+        p.add_node(f"{name} filled", **style)
+
+
+    def filled_style(name, details, pos):
+        return {
+            "color": buffer_colours[name],
+            "penwidth": 4,
+            "shape": "square",
+            "style": "rounded,filled",
+            "fillcolor": "#DDDDDDD0",
+            "fontsize": 16,
+            **node_sizes[name],
+            "label": f"{name}\\n{details}",
+            "pos": pos,
+        }
+
+    edge_colours = {
+        (True, InteractionObservation.Correct): "#2CA02C",
+        (True, InteractionObservation.Incorrect): "#D62728",
+        (False, InteractionObservation.Correct): "#7F7F7F",
+        #(False, InteractionObservation.Incorrect): "#7F7F7F",
+    }
+
+    # Edges
+    for (i, ((same, result), edge_colour)) in enumerate(edge_colours.items()):
+
+        agent = "A1" if result == InteractionObservation.Correct else "A2"
+        if same:
+            label = f"Same capability as interaction,\\nbehaves {result.name.lower()}ly"
+            capability = "C0"
+        else:
+            label = "Different capability to interaction"
+            capability = "C1"
+
+
+        p.add_node(f"crypto e{i}-1", **filled_style("crypto", f"{agent} {capability}", f"{i*5.6},-2.5!"))
+        p.add_node(f"trust e{i}-2", **filled_style("trust", f"{agent} {capability}", f"{i*5.6 + 2.8},-2.5!"))
+
+        p.add_edge(f"crypto e{i}-1", f"trust e{i}-2", color=edge_colour, penwidth=2)
+
+        p.add_node(f"crypto e{i}-text", 
+            shape="plaintext",
+            label=label,
+            pos=f"{i*5.6 + 2.8/2},-1.5!",
+            )
+
+    output_file = f'{path_prefix}legend.pdf'
+
+    p.layout("neato")
+    p.draw(output_file)
+
+    subprocess.run(f"pdfcrop {output_file} {output_file}", check=True, shell=True, stdout=subprocess.DEVNULL)
+
+    check_fonts(output_file)
 
 def call(fn):
     fn()
@@ -197,6 +279,7 @@ def main(args):
     fns = [
         functools.partial(graph_buffer_direct, metrics, args.path_prefix, n, len(metrics.buffers), b)
         for (n, b) in enumerate(metrics.buffers)
+        if args.specific is None or n in args.specific
     ]
 
     usable_cpus = len(os.sched_getaffinity(0))
@@ -206,6 +289,9 @@ def main(args):
     with multiprocessing.Pool(usable_cpus) as pool:
         for _ in tqdm.tqdm(pool.imap_unordered(call, fns), total=len(fns)):
             pass
+
+    if args.make_legend:
+        graph_legend(metrics, args.path_prefix)
 
 if __name__ == "__main__":
     import argparse
@@ -217,6 +303,13 @@ if __name__ == "__main__":
     parser.add_argument('--path-prefix', type=str, default="",
                         help='The prefix to the location to output results')
 
+    parser.add_argument('--specific', nargs="+", default=None, type=int,
+                        help='Specific graphs to create')
+
+    parser.add_argument('--make-legend', action="store_true", default=False,
+                        help='Create a legend')
+
     args = parser.parse_args()
+    args.specific = None if args.specific is None else set(args.specific)
 
     main(args)

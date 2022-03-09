@@ -60,7 +60,7 @@ Individual results need to be combined for them to be graphed
 Trust models with different sizes will consume different amounts of space. The following script can be used to visualise this.
 
 ```bash
-./graph_space.py
+./graph_space.py VeryGoodBehaviour/* AlwaysGoodBehaviour/* UnstableBehaviour/* GoodBehaviour/*
 ```
 
 ## Creating graphs of buffer evolution over time
