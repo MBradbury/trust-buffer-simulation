@@ -252,10 +252,10 @@ def graph_legend(metrics: Metrics, path_prefix: str):
 
         agent = "A1" if result == InteractionObservation.Correct else "A2"
         if same:
-            label = f"Same capability as interaction,\\nbehaves {result.name.lower()}ly"
+            label = f"Same service as interaction,\\nbehaves {result.name.lower()}ly"
             capability = "C0"
         else:
-            label = "Different capability to interaction"
+            label = "Different service to interaction"
             capability = "C1"
 
 
