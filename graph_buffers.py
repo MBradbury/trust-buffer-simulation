@@ -38,24 +38,29 @@ buffer_colours = {
     "stereotype": "#BCBD22", #"darkslategray2",
 }
 
-node_sizes = {
-    "crypto": {"fixedsize": "true", "height": "1.2", "width": "1.2"},
-    "trust": {"fixedsize": "true", "height": "1.2", "width": "1.2"},
-    "reputation": {},
-    "stereotype": {"fixedsize": "true", "height": "1.65", "width": "1.65"},
-}
-
 def graph_buffer_direct(metrics: Metrics, path_prefix: str, n: int, total_n: int, tb):
     p = AGraph(
         label=f"({tb.source} {tb.capability}) generating task, utility={tb.utility}",
         margin="0",
-        ratio="0.5",
-        overlap="voronoi",
+        #ratio="compress",
+        #overlap="voronoi",
         splines="curved",
         outputorder="edgesfirst",
         K=0.125,
-        fontsize=36,
+        fontsize=22,
+        pack=True,
+        overlap="prism", overlap_scaling=0.6, ratio=0.5,
+        fontname="Adobe Times",
     )
+
+    node_sizes = {
+        "crypto": {"fixedsize": "true", "height": "1.2", "width": "1.5"},
+        "trust": {"fixedsize": "true", "height": "1.2", "width": "1.5"},
+        "reputation": {},
+        "stereotype": {"fixedsize": "true", "height": "1.2", "width": "2"},
+    }
+
+    text_font_size = 22
 
     buffer_sizes = {
         "crypto": metrics.args.max_crypto_buf,
@@ -123,7 +128,7 @@ def graph_buffer_direct(metrics: Metrics, path_prefix: str, n: int, total_n: int
                 "penwidth": 4,
                 "shape": "square",
                 "style": "rounded",
-                "fontsize": 16,
+                "fontsize": text_font_size,
                 **node_sizes[name],
             }
 
@@ -170,7 +175,7 @@ def graph_buffer_direct(metrics: Metrics, path_prefix: str, n: int, total_n: int
 
     output_file = f'{path_prefix}Topology-{str(n).zfill(pad)}-{tb.t}.pdf'
 
-    p.layout("fdp")
+    p.layout("neato")
     #p.layout("dot")
     p.draw(output_file)
     #p.draw(output_file[:-4] + ".gv")
@@ -181,18 +186,23 @@ def graph_buffer_direct(metrics: Metrics, path_prefix: str, n: int, total_n: int
     check_fonts(output_file)
 
 def graph_legend(metrics: Metrics, path_prefix: str):
+    text_font_size = 20
+
     p = AGraph(
         margin="0",
-        #ratio="0.5",
-        #overlap="voronoi",
-        #splines="curved",
-        #outputorder="edgesfirst",
-        #K=0.125,
         n=2,
         forcelabels=True,
-        fontsize=16,
+        fontsize=text_font_size,
         label=f"Agent A0 generating task for service C0, A1 behaves correctly, A2 behaves incorrectly",
+        fontname="Adobe Times",
     )
+
+    node_sizes = {
+        "crypto": {"fixedsize": "true", "height": "1.2", "width": "1.5"},
+        "trust": {"fixedsize": "true", "height": "1.2", "width": "1.5"},
+        "reputation": {},
+        "stereotype": {"fixedsize": "true", "height": "1.2", "width": "2"},
+    }
 
     # Nodes
     for (i, name) in enumerate(buffer_colours.keys()):
@@ -201,10 +211,10 @@ def graph_legend(metrics: Metrics, path_prefix: str):
             "penwidth": 4,
             "shape": "square",
             "style": "rounded",
-            "fontsize": 16,
+            "fontsize": text_font_size,
             **node_sizes[name],
             "label": f"{name}\\nempty",
-            "pos": f"{i*4},0!",
+            "pos": f"{i*5},0!",
         }
 
         p.add_node(f"{name} empty", **style)
@@ -212,7 +222,7 @@ def graph_legend(metrics: Metrics, path_prefix: str):
         style["fillcolor"] = "#DDDDDDD0"
         style["style"] = "rounded,filled"
         style["label"] = f"{name}\\nfilled"
-        style["pos"] = f"{i*4 + 2},0!"
+        style["pos"] = f"{i*5 + 2.5},0!"
 
         p.add_node(f"{name} filled", **style)
 
@@ -224,7 +234,7 @@ def graph_legend(metrics: Metrics, path_prefix: str):
             "shape": "square",
             "style": "rounded,filled",
             "fillcolor": "#DDDDDDD0",
-            "fontsize": 16,
+            "fontsize": text_font_size,
             **node_sizes[name],
             "label": f"{name}\\n{details}",
             "pos": pos,
@@ -249,15 +259,16 @@ def graph_legend(metrics: Metrics, path_prefix: str):
             capability = "C1"
 
 
-        p.add_node(f"crypto e{i}-1", **filled_style("crypto", f"{agent} {capability}", f"{i*5.6},-2.5!"))
-        p.add_node(f"trust e{i}-2", **filled_style("trust", f"{agent} {capability}", f"{i*5.6 + 2.8},-2.5!"))
+        p.add_node(f"crypto e{i}-1", **filled_style("crypto", f"{agent} {capability}", f"{i*6.5},-2.5!"))
+        p.add_node(f"trust e{i}-2", **filled_style("trust", f"{agent} {capability}", f"{i*6.5 + 6.5/2},-2.5!"))
 
         p.add_edge(f"crypto e{i}-1", f"trust e{i}-2", color=edge_colour, penwidth=2)
 
         p.add_node(f"crypto e{i}-text", 
             shape="plaintext",
+            fontsize=text_font_size,
             label=label,
-            pos=f"{i*5.6 + 2.8/2},-1.5!",
+            pos=f"{i*6.5 + 6.5/4},-3.75!",
             )
 
     output_file = f'{path_prefix}legend.pdf'
