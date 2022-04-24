@@ -213,7 +213,7 @@ def graph_legend(metrics: Metrics, path_prefix: str):
             "style": "rounded",
             "fontsize": text_font_size,
             **node_sizes[name],
-            "label": f"{name}\\nempty",
+            "label": f"{name}\\nno data",
             "pos": f"{i*5},0!",
         }
 
@@ -221,13 +221,13 @@ def graph_legend(metrics: Metrics, path_prefix: str):
 
         style["fillcolor"] = "#DDDDDDD0"
         style["style"] = "rounded,filled"
-        style["label"] = f"{name}\\nfilled"
+        style["label"] = f"{name}\\nhas data"
         style["pos"] = f"{i*5 + 2.5},0!"
 
         p.add_node(f"{name} filled", **style)
 
 
-    def filled_style(name, details, pos):
+    def filled_style(name, i, details, pos):
         return {
             "color": buffer_colours[name],
             "penwidth": 4,
@@ -236,7 +236,7 @@ def graph_legend(metrics: Metrics, path_prefix: str):
             "fillcolor": "#DDDDDDD0",
             "fontsize": text_font_size,
             **node_sizes[name],
-            "label": f"{name}\\n{details}",
+            "label": f"{name} {i}\\n{details}",
             "pos": pos,
         }
 
@@ -259,8 +259,8 @@ def graph_legend(metrics: Metrics, path_prefix: str):
             capability = "C1"
 
 
-        p.add_node(f"crypto e{i}-1", **filled_style("crypto", f"{agent} {capability}", f"{i*6.5},-2.5!"))
-        p.add_node(f"trust e{i}-2", **filled_style("trust", f"{agent} {capability}", f"{i*6.5 + 6.5/2},-2.5!"))
+        p.add_node(f"crypto e{i}-1", **filled_style(f"crypto", i, f"{agent}", f"{i*6.5},-2.5!"))
+        p.add_node(f"trust e{i}-2", **filled_style(f"trust", i, f"{agent} {capability}", f"{i*6.5 + 6.5/2},-2.5!"))
 
         p.add_edge(f"crypto e{i}-1", f"trust e{i}-2", color=edge_colour, penwidth=2)
 
