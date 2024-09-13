@@ -1,16 +1,31 @@
 from __future__ import annotations
 
 import copy
+import random
+from typing import Any
 
 from simulation.agent_choose_behaviour import AgentChooseBehaviour
 from simulation.agent_buffers import AgentBuffers, ReputationItem, CryptoItem, TrustItem, StereotypeItem
 from simulation.capability import Capability
-from simulation.events import AgentStereotypeRequest, AgentCryptoRequest, AgentTaskInteraction
+from simulation.capability_behaviour import CapabilityBehaviour
+from simulation.events import AgentStereotypeRequest, AgentCryptoRequest, AgentTaskInteraction, InteractionObservation
 from simulation.constants import EPSILON
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from simulation.simulator import Simulator
+
 class Agent:
-    def __init__(self, name: str, capabilities: List[Capability], behaviour, choose: AgentChooseBehaviour, trust_dissem_period: float,
-                crypto_bux_max: int, trust_bux_max: int, reputation_bux_max: int, stereotype_bux_max: int):
+    def __init__(self,
+                 name: str,
+                 capabilities: list[Capability],
+                 behaviour: type[CapabilityBehaviour],
+                 choose: type[AgentChooseBehaviour],
+                 trust_dissem_period: float,
+                 crypto_bux_max: int,
+                 trust_bux_max: int,
+                 reputation_bux_max: int,
+                 stereotype_bux_max: int):
         self.name = name
         self.capabilities = capabilities
         self.capability_behaviour = {capability: behaviour() for capability in self.capabilities}
@@ -21,26 +36,30 @@ class Agent:
 
         self.buffers = AgentBuffers(self, crypto_bux_max, trust_bux_max, reputation_bux_max, stereotype_bux_max)
 
-        self.sim = None
+        self.sim: Simulator | None = None
 
-    def set_sim(self, sim):
+    def set_sim(self, sim: Simulator):
         self.sim = sim
 
         # Give each behaviour their own random seed to prevent capabilities
         # all being good or bad simultaneously
-        for (capability, behaviour) in sorted(self.capability_behaviour.items(), key=lambda x: x[0].name):
+        for (_capability, behaviour) in sorted(self.capability_behaviour.items(), key=lambda x: x[0].name):
             behaviour.individual_seed = sim.rng.getrandbits(32)
 
     def next_trust_dissemination_period(self, rng: random.Random) -> float:
         return rng.expovariate(1.0 / self.trust_dissem_period)
 
     def request_stereotype(self, agent: Agent):
+        assert self.sim is not None
         self.sim.add_event(AgentStereotypeRequest(self.sim.current_time + EPSILON, self, agent))
 
     def request_crypto(self, agent: Agent):
+        assert self.sim is not None
         self.sim.add_event(AgentCryptoRequest(self.sim.current_time + EPSILON, self, agent))
 
     def receive_trust_information(self, agent: Agent):
+        assert self.sim is not None
+
         # Don't record information from ourself
         if agent is self:
             return
@@ -77,6 +96,8 @@ class Agent:
 
 
     def receive_crypto_information(self, agent: Agent):
+        assert self.sim is not None
+
         # Don't record information about ourself
         if agent is self:
             return
@@ -92,6 +113,8 @@ class Agent:
         self.buffers.add_crypto(self.sim.es, new_crypto_item)
 
     def receive_stereotype_information(self, agent: Agent, capability: Capability):
+        assert self.sim is not None
+
         # Ignore stereotypes about ourself
         if agent is self:
             return
@@ -111,6 +134,8 @@ class Agent:
         self.buffers.add_stereotype(self.sim.es, new_stereotype_item)
 
     def update_trust_history(self, agent: Agent, capability: Capability, outcome: InteractionObservation):
+        assert self.sim is not None
+
         trust_item = self.buffers.find_trust(agent, capability)
 
         # Need to add item if not in buffer
@@ -131,6 +156,8 @@ class Agent:
         self.log(f"Value of buffers after update {self.buffers.utility(self, capability, targets=[agent])} {capability}")
 
     def choose_agent_for_task(self, capability: Capability):
+        assert self.sim is not None
+
         item = self.choose.choose_agent_for_task(self, capability)
         if item is None:
             return None
@@ -148,6 +175,8 @@ class Agent:
         return item.agent
 
     def perform_interaction(self, selected_agent: Agent, capability: Capability):
+        assert self.sim is not None
+
         # Record the values in the buffers at the time the interaction was initiated
         buffers = self.buffers.frozen()
 
@@ -155,6 +184,7 @@ class Agent:
 
 
     def log(self, message: str):
+        assert self.sim is not None
         self.sim.log(f"{self!s}|{message}")
 
     def __repr__(self):
@@ -164,7 +194,7 @@ class Agent:
         return self.name
 
     # Can't allow this to be copied
-    def __deepcopy__(self, memo):
+    def __deepcopy__(self, memo: Any):
         return self
 
     # Can't allow this to be copied

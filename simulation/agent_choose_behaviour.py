@@ -1,13 +1,24 @@
 from __future__ import annotations
 
+from typing import Optional
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from simulation.agent import Agent
+    from simulation.agent_buffers import AgentBuffers, CryptoItem
+    from simulation.capability import Capability
+
 class AgentChooseBehaviour:
-    def choose_agent_for_task(self, agent: Agent, capability: Capability) -> Optional[Agent]:
+    short_name = "Base"
+
+    def choose_agent_for_task(self, agent: Agent, capability: Capability) -> Optional[CryptoItem]:
         raise NotImplementedError
 
 class RandomAgentChooseBehaviour(AgentChooseBehaviour):
     short_name = "Random"
 
-    def choose_agent_for_task(self, agent: Agent, capability: Capability) -> Optional[Agent]:
+    def choose_agent_for_task(self, agent: Agent, capability: Capability) -> Optional[CryptoItem]:
+        assert agent.sim is not None
         try:
             return agent.sim.rng.choice([item for item in agent.buffers.crypto if capability in item.agent.capabilities])
         except IndexError:
@@ -48,7 +59,9 @@ class BRSAgentChooseBehaviour(AgentChooseBehaviour):
         except ZeroDivisionError:
             return 0
 
-    def choose_agent_for_task(self, agent: Agent, capability: Capability) -> Optional[Agent]:
+    def choose_agent_for_task(self, agent: Agent, capability: Capability) -> Optional[CryptoItem]:
+        assert agent.sim is not None
+
         options = [item for item in agent.buffers.crypto if capability in item.agent.capabilities]
         if not options:
             return None

@@ -3,23 +3,29 @@ from __future__ import annotations
 from dataclasses import dataclass
 from functools import total_ordering
 
-from simulation.constants import EPSILON
 from simulation.capability_behaviour import InteractionObservation
 from simulation.utility_targets import UtilityTargets
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from simulation.simulator import Simulator
+    from simulation.agent import Agent
+    from simulation.agent_buffers import AgentBuffers
+    from simulation.capability import Capability
 
 @total_ordering
 @dataclass(eq=False)
 class BaseEvent:
     event_time: float
 
-    def log(self, sim: Simulation, message: str):
+    def log(self, sim: Simulator, message: str):
         sim.log(f"event|{self!r}|{message}")
 
-    def action(self, sim: Simulation):
+    def action(self, sim: Simulator):
         self.log(sim, "performed")
 
-    def __eq__(self, other: BaseEvent):
-        return self.event_time == other.event_time
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, BaseEvent) and self.event_time == other.event_time
 
     def __lt__(self, other: BaseEvent):
         return self.event_time < other.event_time
@@ -29,7 +35,7 @@ class AgentInit(BaseEvent):
         super().__init__(event_time)
         self.agent = agent
 
-    def action(self, sim: Simulation):
+    def action(self, sim: Simulator):
         super().action(sim)
 
         sim.add_event(AgentTrustDissemination(self.event_time + self.agent.next_trust_dissemination_period(sim.rng), self.agent))
@@ -46,7 +52,7 @@ class AgentCapabilityTask(BaseEvent):
         self.agent = agent
         self.capability = capability
 
-    def action(self, sim: Simulation):
+    def action(self, sim: Simulator):
         super().action(sim)
 
         sim.metrics.add_interaction_performed(self.event_time, self.agent, self.capability)
@@ -72,7 +78,7 @@ class AgentTaskInteraction(BaseEvent):
         self.target = target
         self.buffers = buffers
 
-    def _ensure_crypto_exists(self, sim: Simulation, agent: Agent, other: Agent):
+    def _ensure_crypto_exists(self, sim: Simulator, agent: Agent, other: Agent):
         crypto = agent.buffers.find_crypto(other)
         if crypto is None:
             agent.receive_crypto_information(other)
@@ -81,7 +87,7 @@ class AgentTaskInteraction(BaseEvent):
             sim.es.use_crypto(crypto)
         return crypto is not None
 
-    def action(self, sim: Simulation):
+    def action(self, sim: Simulator):
         super().action(sim)
 
         # Source needs target's crypto information to process response
@@ -111,7 +117,7 @@ class AgentTaskInteraction(BaseEvent):
 
         # Who are we interested in evaluating the utility of the buffers for?
         if sim.utility_targets == UtilityTargets.All:
-            utility_targets = outcomes.keys()
+            utility_targets = list(outcomes.keys())
         elif sim.utility_targets == UtilityTargets.Good:
             utility_targets = [a for (a, o) in outcomes.items() if o == InteractionObservation.Correct]
         else:
@@ -135,7 +141,7 @@ class AgentTrustDissemination(BaseEvent):
         super().__init__(event_time)
         self.agent = agent
 
-    def action(self, sim: Simulation):
+    def action(self, sim: Simulator):
         super().action(sim)
 
         # Process trust reception at other agents
@@ -155,7 +161,7 @@ class AgentCryptoRequest(BaseEvent):
         self.requester = requester
         self.agent = agent
 
-    def action(self, sim: Simulation):
+    def action(self, sim: Simulator):
         super().action(sim)
 
         self.requester.receive_crypto_information(self.agent)
@@ -169,7 +175,7 @@ class AgentStereotypeRequest(BaseEvent):
         self.requester = requester
         self.agent = agent
 
-    def action(self, sim: Simulation):
+    def action(self, sim: Simulator):
         super().action(sim)
 
         for capability in self.agent.capabilities:

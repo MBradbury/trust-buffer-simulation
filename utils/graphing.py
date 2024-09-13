@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import subprocess
 
+from matplotlib.figure import Figure
+
 def check_fonts(path: str):
 	# Not all papers like having type 3 fonts, 
 	# so check if there are any
@@ -17,7 +19,7 @@ def check_fonts(path: str):
     if "Type 3" in r.stdout:
         raise RuntimeError(f"Type 3 font in {path}")
 
-def savefig(fig, target: str, crop=False):
+def savefig(fig: Figure, target: str, crop: bool=False):
     fig.savefig(target, bbox_inches='tight')
 
     if crop:

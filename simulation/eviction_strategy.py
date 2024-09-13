@@ -1,14 +1,23 @@
 from __future__ import annotations
 
-import math
+from typing import Optional, TypeVar, Sequence
 
 import numpy as np
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from simulation.simulator import Simulator
+    from simulation.agent_buffers import AgentBuffers, CryptoItem, TrustItem, ReputationItem, StereotypeItem
+
+ItemT = TypeVar('ItemT', CryptoItem, TrustItem, ReputationItem, StereotypeItem)
+
 class EvictionStrategy:
-    def __init__(self, sim: Simulation):
+    short_name = "Base"
+
+    def __init__(self, sim: Simulator):
         self.sim = sim
 
-    def add_common(self, item):
+    def add_common(self, item: ItemT):
         pass
 
     def add_crypto(self, item: CryptoItem):
@@ -20,61 +29,61 @@ class EvictionStrategy:
     def add_stereotype(self, item: StereotypeItem):
         return self.add_common(item)
 
-    def choose_common(self, items: List, buffers: AgentBuffers, new_item):
+    def choose_common(self, items: Sequence[ItemT], buffers: AgentBuffers, new_item: ItemT) -> Optional[ItemT]:
         raise NotImplementedError()
 
-    def choose_crypto(self, items: List[CryptoItem], buffers: AgentBuffers, new_item: CryptoItem) -> Optional[CryptoItem]:
+    def choose_crypto(self, items: Sequence[CryptoItem], buffers: AgentBuffers, new_item: CryptoItem) -> Optional[CryptoItem]:
         return self.choose_common(items, buffers, new_item)
-    def choose_trust(self, items: List[TrustItem], buffers: AgentBuffers, new_item: TrustItem) -> Optional[TrustItem]:
+    def choose_trust(self, items: Sequence[TrustItem], buffers: AgentBuffers, new_item: TrustItem) -> Optional[TrustItem]:
         return self.choose_common(items, buffers, new_item)
-    def choose_reputation(self, items: List[ReputationItem], buffers: AgentBuffers, new_item: ReputationItem) -> Optional[ReputationItem]:
+    def choose_reputation(self, items: Sequence[ReputationItem], buffers: AgentBuffers, new_item: ReputationItem) -> Optional[ReputationItem]:
         return self.choose_common(items, buffers, new_item)
-    def choose_stereotype(self, items: List[StereotypeItem], buffers: AgentBuffers, new_item: StereotypeItem) -> Optional[StereotypeItem]:
+    def choose_stereotype(self, items: Sequence[StereotypeItem], buffers: AgentBuffers, new_item: StereotypeItem) -> Optional[StereotypeItem]:
         return self.choose_common(items, buffers, new_item)
 
-    def use_common(self, item):
+    def use_common(self, item: ItemT | None):
         pass
 
-    def use_crypto(self, item: CryptoItem):
+    def use_crypto(self, item: CryptoItem | None):
         return self.use_common(item)
-    def use_trust(self, item: TrustItem):
+    def use_trust(self, item: TrustItem | None):
         return self.use_common(item)
-    def use_reputation(self, item: ReputationItem):
+    def use_reputation(self, item: ReputationItem | None):
         return self.use_common(item)
-    def use_stereotype(self, item: StereotypeItem):
+    def use_stereotype(self, item: StereotypeItem | None):
         return self.use_common(item)
 
 class NoneEvictionStrategy(EvictionStrategy):
     short_name = "None"
 
-    def choose_common(self, items: List, buffers: AgentBuffers, new_item):
+    def choose_common(self, items: Sequence[ItemT], buffers: AgentBuffers, new_item: ItemT) -> Optional[ItemT]:
         return None
 
 class RandomEvictionStrategy(EvictionStrategy):
     short_name = "Random"
 
-    def choose_common(self, items: List, buffers: AgentBuffers, new_item):
+    def choose_common(self, items: Sequence[ItemT], buffers: AgentBuffers, new_item: ItemT) -> Optional[ItemT]:
         return self.sim.rng.choice(items)
 
 class FIFOEvictionStrategy(EvictionStrategy):
     short_name = "FIFO"
 
-    def add_common(self, item):
+    def add_common(self, item: ItemT):
         item.eviction_data = self.sim.current_time
 
-    def choose_common(self, items: List, buffers: AgentBuffers, new_item):
+    def choose_common(self, items: Sequence[ItemT], buffers: AgentBuffers, new_item: ItemT) -> Optional[ItemT]:
         return min(items, key=lambda x: x.eviction_data)
 
 class LRUEvictionStrategy(EvictionStrategy):
     short_name = "LRU"
 
-    def add_common(self, item):
+    def add_common(self, item: ItemT):
         item.eviction_data = self.sim.current_time
 
-    def choose_common(self, items: List, buffers: AgentBuffers, new_item):
+    def choose_common(self, items: Sequence[ItemT], buffers: AgentBuffers, new_item: ItemT) -> Optional[ItemT]:
         return min(items, key=lambda x: x.eviction_data)
 
-    def use_common(self, item):
+    def use_common(self, item: ItemT | None):
         if item is None:
             return
 
@@ -83,13 +92,13 @@ class LRUEvictionStrategy(EvictionStrategy):
 class LRU2EvictionStrategy(EvictionStrategy):
     short_name = "LRU2"
 
-    def add_common(self, item):
+    def add_common(self, item: ItemT):
         item.eviction_data = (self.sim.current_time, self.sim.current_time)
 
-    def choose_common(self, items: List, buffers: AgentBuffers, new_item):
+    def choose_common(self, items: Sequence[ItemT], buffers: AgentBuffers, new_item: ItemT) -> Optional[ItemT]:
         return min(items, key=lambda x: x.eviction_data[1])
 
-    def use_common(self, item):
+    def use_common(self, item: ItemT | None):
         if item is None:
             return
 
@@ -98,13 +107,13 @@ class LRU2EvictionStrategy(EvictionStrategy):
 class MRUEvictionStrategy(EvictionStrategy):
     short_name = "MRU"
 
-    def add_common(self, item):
+    def add_common(self, item: ItemT):
         item.eviction_data = self.sim.current_time
 
-    def choose_common(self, items: List, buffers: AgentBuffers, new_item):
+    def choose_common(self, items: Sequence[ItemT], buffers: AgentBuffers, new_item: ItemT) -> Optional[ItemT]:
         return max(items, key=lambda x: x.eviction_data)
 
-    def use_common(self, item):
+    def use_common(self, item: ItemT | None):
         if item is None:
             return
 
@@ -121,10 +130,10 @@ class Chen2016EvictionStrategy(EvictionStrategy):
 
     omega = 0.5
 
-    def add_common(self, item):
+    def add_common(self, item: ItemT):
         item.eviction_data = self.sim.current_time
 
-    def choose_trust(self, items: List[TrustItem], buffers: AgentBuffers, new_item) -> Optional[TrustItem]:
+    def choose_trust(self, items: Sequence[TrustItem], buffers: AgentBuffers, new_item: TrustItem) -> Optional[TrustItem]:
         # Remove the earliest interacting node with a trust value below the median
         # Can't do below the median, need to also include it as otherwise there
         # may be no items to select from
@@ -138,11 +147,11 @@ class Chen2016EvictionStrategy(EvictionStrategy):
             # Fallback to LRU
             return min(items, key=lambda x: x.eviction_data)
 
-    def choose_common(self, items: List, buffers: AgentBuffers, new_item):
+    def choose_common(self, items: Sequence[ItemT], buffers: AgentBuffers, new_item: ItemT) -> Optional[ItemT]:
         # Do LRU for everything else
         return min(items, key=lambda x: x.eviction_data)
 
-    def use_common(self, item):
+    def use_common(self, item: ItemT | None):
         if item is None:
             return
 
@@ -151,10 +160,10 @@ class Chen2016EvictionStrategy(EvictionStrategy):
 class FiveBandEvictionStrategy(EvictionStrategy):
     short_name = "FiveBand"
 
-    def add_common(self, item):
+    def add_common(self, item: ItemT):
         item.eviction_data = self.sim.current_time
 
-    def choose_trust(self, items: List[TrustItem], buffers: AgentBuffers, new_item: TrustItem) -> Optional[TrustItem]:
+    def choose_trust(self, items: Sequence[TrustItem], buffers: AgentBuffers, new_item: TrustItem) -> Optional[TrustItem]:
         item_trust = [item.brs_trust() for item in items]
 
         quantile = np.quantile(item_trust, [0.2, 0.4, 0.6, 0.8, 1.0])
@@ -163,7 +172,7 @@ class FiveBandEvictionStrategy(EvictionStrategy):
         # Keep the middle 20% nodes as they may not have had a chance to stabilise
         # Consider removing the inbetween nodes that are neither very good or very bad
 
-        low, lowmid, mid, highmid, high = quantile
+        low, lowmid, mid, highmid, _high = quantile
 
         filtered_items = [
             item
@@ -186,11 +195,11 @@ class FiveBandEvictionStrategy(EvictionStrategy):
                 # Fallback to LRU
                 return min(items, key=lambda x: x.eviction_data)
 
-    def choose_common(self, items: List, buffers: AgentBuffers, new_item):
+    def choose_common(self, items: Sequence[ItemT], buffers: AgentBuffers, new_item: ItemT) -> Optional[ItemT]:
         # Do LRU for everything else
         return min(items, key=lambda x: x.eviction_data)
 
-    def use_common(self, item):
+    def use_common(self, item: ItemT | None):
         if item is None:
             return
 
@@ -200,10 +209,10 @@ class FiveBandEvictionStrategy(EvictionStrategy):
 class NotInOtherEvictionStrategy(EvictionStrategy):
     short_name = "NotInOther"
 
-    def add_common(self, item):
+    def add_common(self, item: ItemT):
         item.eviction_data = self.sim.current_time
 
-    def _lru(self, choices: list):
+    def _lru(self, choices: Sequence[tuple[ItemT, int]]) -> ItemT | None:
         if not choices:
             return None
 
@@ -212,38 +221,38 @@ class NotInOtherEvictionStrategy(EvictionStrategy):
         if selected:
             return min(selected, key=lambda x: x.eviction_data)
         else:
-            selected = [item for (item, count) in choices]
+            selected = [item for (item, _count) in choices]
             return min(selected, key=lambda x: x.eviction_data)
 
-    def choose_crypto(self, items: List[CryptoItem], buffers: AgentBuffers, new_item: CryptoItem) -> Optional[CryptoItem]:
+    def choose_crypto(self, items: Sequence[CryptoItem], buffers: AgentBuffers, new_item: CryptoItem) -> Optional[CryptoItem]:
         choices = [
             (item, buffers.buffer_has_agent_count(item.agent, "TRS"))
             for item in items
         ]
         return self._lru(choices)
 
-    def choose_trust(self, items: List[TrustItem], buffers: AgentBuffers, new_item: TrustItem) -> Optional[TrustItem]:
+    def choose_trust(self, items: Sequence[TrustItem], buffers: AgentBuffers, new_item: TrustItem) -> Optional[TrustItem]:
         choices = [
             (item, buffers.buffer_has_agent_capability_count(item.agent, item.capability, "CRS"))
             for item in items
         ]
         return self._lru(choices)
 
-    def choose_reputation(self, items: List[ReputationItem], buffers: AgentBuffers, new_item: ReputationItem) -> Optional[ReputationItem]:
+    def choose_reputation(self, items: Sequence[ReputationItem], buffers: AgentBuffers, new_item: ReputationItem) -> Optional[ReputationItem]:
         choices = [
             (item, sum(buffers.buffer_has_agent_capability_count(trust_item.agent, trust_item.capability, "CTS") for trust_item in item.trust_items))
             for item in items
         ]
         return self._lru(choices)
 
-    def choose_stereotype(self, items: List[StereotypeItem], buffers: AgentBuffers, new_item: StereotypeItem) -> Optional[StereotypeItem]:
+    def choose_stereotype(self, items: Sequence[StereotypeItem], buffers: AgentBuffers, new_item: StereotypeItem) -> Optional[StereotypeItem]:
         choices = [
             (item, buffers.buffer_has_agent_capability_count(item.agent, item.capability, "CTR"))
             for item in items
         ]
         return self._lru(choices)
 
-    def use_common(self, item):
+    def use_common(self, item: ItemT | None):
         if item is None:
             return
 
@@ -253,10 +262,10 @@ class NotInOtherEvictionStrategy(EvictionStrategy):
 class MinNotInOtherEvictionStrategy(EvictionStrategy):
     short_name = "MinNotInOther"
 
-    def add_common(self, item):
+    def add_common(self, item: ItemT):
         item.eviction_data = self.sim.current_time
 
-    def _lru(self, choices: list):
+    def _lru(self, choices: Sequence[tuple[ItemT, int]]) -> ItemT | None:
         if not choices:
             return None
 
@@ -266,35 +275,35 @@ class MinNotInOtherEvictionStrategy(EvictionStrategy):
 
         return min(selected, key=lambda x: x.eviction_data)
 
-    def choose_crypto(self, items: List[CryptoItem], buffers: AgentBuffers, new_item: CryptoItem) -> Optional[CryptoItem]:
+    def choose_crypto(self, items: Sequence[CryptoItem], buffers: AgentBuffers, new_item: CryptoItem) -> Optional[CryptoItem]:
         choices = [
             (item, buffers.buffer_has_agent_count(item.agent, "TRS"))
             for item in items
         ]
         return self._lru(choices)
 
-    def choose_trust(self, items: List[TrustItem], buffers: AgentBuffers, new_item: TrustItem) -> Optional[TrustItem]:
+    def choose_trust(self, items: Sequence[TrustItem], buffers: AgentBuffers, new_item: TrustItem) -> Optional[TrustItem]:
         choices = [
             (item, buffers.buffer_has_agent_capability_count(item.agent, item.capability, "CRS"))
             for item in items
         ]
         return self._lru(choices)
 
-    def choose_reputation(self, items: List[ReputationItem], buffers: AgentBuffers, new_item: ReputationItem) -> Optional[ReputationItem]:
+    def choose_reputation(self, items: Sequence[ReputationItem], buffers: AgentBuffers, new_item: ReputationItem) -> Optional[ReputationItem]:
         choices = [
             (item, sum(buffers.buffer_has_agent_capability_count(trust_item.agent, trust_item.capability, "CTS") for trust_item in item.trust_items))
             for item in items
         ]
         return self._lru(choices)
 
-    def choose_stereotype(self, items: List[StereotypeItem], buffers: AgentBuffers, new_item: StereotypeItem) -> Optional[StereotypeItem]:
+    def choose_stereotype(self, items: Sequence[StereotypeItem], buffers: AgentBuffers, new_item: StereotypeItem) -> Optional[StereotypeItem]:
         choices = [
             (item, buffers.buffer_has_agent_capability_count(item.agent, item.capability, "CTR"))
             for item in items
         ]
         return self._lru(choices)
 
-    def use_common(self, item):
+    def use_common(self, item: ItemT | None):
         if item is None:
             return
 
@@ -304,32 +313,32 @@ class MinNotInOtherEvictionStrategy(EvictionStrategy):
 class CapabilityPriorityEvictionStrategy(EvictionStrategy):
     short_name = "CapPri"
 
-    def add_common(self, item):
+    def add_common(self, item: ItemT):
         item.eviction_data = self.sim.current_time
 
-    def _lru(self, items: list):
-        if not items:
+    def _lru(self, choices: Sequence[tuple[ItemT, int]]) -> ItemT | None:
+        if not choices:
             return None
 
-        min_priority = min(items, key=lambda x: x[1])[1]
+        min_priority = min(choices, key=lambda x: x[1])[1]
 
-        selected = [item for (item, priority) in items if priority == min_priority]
+        selected = [item for (item, priority) in choices if priority == min_priority]
 
         return min(selected, key=lambda x: x.eviction_data)
 
-    def choose_crypto(self, items: List[CryptoItem], buffers: AgentBuffers, new_item: CryptoItem) -> Optional[CryptoItem]:
+    def choose_crypto(self, items: Sequence[CryptoItem], buffers: AgentBuffers, new_item: CryptoItem) -> Optional[CryptoItem]:
         return self._lru([(item, max(capability.priority for capability in item.agent.capabilities)) for item in items])
 
-    def choose_trust(self, items: List[TrustItem], buffers: AgentBuffers, new_item: TrustItem) -> Optional[TrustItem]:
+    def choose_trust(self, items: Sequence[TrustItem], buffers: AgentBuffers, new_item: TrustItem) -> Optional[TrustItem]:
         return self._lru([(item, item.capability.priority) for item in items])
 
-    def choose_reputation(self, items: List[ReputationItem], buffers: AgentBuffers, new_item: ReputationItem) -> Optional[ReputationItem]:
+    def choose_reputation(self, items: Sequence[ReputationItem], buffers: AgentBuffers, new_item: ReputationItem) -> Optional[ReputationItem]:
         return self._lru([(item, max(trust_item.capability.priority for trust_item in item.trust_items) if item.trust_items else -1) for item in items])
 
-    def choose_stereotype(self, items: List[StereotypeItem], buffers: AgentBuffers, new_item: StereotypeItem) -> Optional[StereotypeItem]:
+    def choose_stereotype(self, items: Sequence[StereotypeItem], buffers: AgentBuffers, new_item: StereotypeItem) -> Optional[StereotypeItem]:
         return self._lru([(item, item.capability.priority) for item in items])
 
-    def use_common(self, item):
+    def use_common(self, item: ItemT | None):
         if item is None:
             return
 

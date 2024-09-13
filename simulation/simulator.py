@@ -3,15 +3,15 @@ from __future__ import annotations
 
 import random
 import heapq
-from typing import List
 
 from simulation.agent import Agent
-from simulation.events import AgentInit
+from simulation.events import BaseEvent, AgentInit
 from simulation.metrics import Metrics
 from simulation.utility_targets import UtilityTargets
+from simulation.eviction_strategy import EvictionStrategy
 
 class Simulator:
-    def __init__(self, seed: int, agents: List[Agent], escls, duration: float, utility_targets: UtilityTargets, log_level: int):
+    def __init__(self, seed: int, agents: list[Agent], escls: type[EvictionStrategy], duration: float, utility_targets: UtilityTargets, log_level: int):
         # Initialise the PRNG and record the seed
         self.seed = seed
         self.rng = random.Random(self.seed)
@@ -26,13 +26,13 @@ class Simulator:
         self.utility_targets = utility_targets
 
         self.current_time = 0
-        self.queue = []
+        self.queue: list[BaseEvent] = []
 
         self.metrics = Metrics()
 
         self.log_level = log_level
 
-    def add_event(self, event):
+    def add_event(self, event: BaseEvent):
         heapq.heappush(self.queue, event)
 
     def run(self, max_start_delay: float):

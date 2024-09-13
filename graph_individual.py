@@ -1,14 +1,12 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 from __future__ import annotations
 
 import os
 import pickle
-import subprocess
 import itertools
 from itertools import chain
 import multiprocessing
 import functools
-from pprint import pprint
 import bz2
 
 import numpy as np
@@ -20,7 +18,7 @@ import matplotlib.ticker as ticker
 
 import seaborn
 
-from analysis import savefig
+from utils.graphing import savefig
 from simulation.metrics import Metrics
 from simulation.capability_behaviour import CapabilityBehaviourState, InteractionObservation
 

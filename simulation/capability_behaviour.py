@@ -20,7 +20,7 @@ class CapabilityBehaviour:
 
         self.hmm = MultinomialHMM(n_components=len(self.states))
 
-        self.state_history = []
+        self.state_history: list[tuple[float, CapabilityBehaviourState]] = []
 
         # When many similar capabilities are being used, it is quite often
         # the case that they will be in the same state. This means agent
@@ -29,9 +29,9 @@ class CapabilityBehaviour:
         # all fail at the same time.
         # To prevent this synchronisation, each behaviour is given their own
         # different initial seed to mix with the seed provided for an interaction.
-        self.individual_seed = 0
+        self.individual_seed: int = 0
 
-    def next_interaction(self, seed: int, t: float):
+    def next_interaction(self, seed: int, t: float) -> InteractionObservation:
         (x, state_sequence) = self.hmm.sample(1, random_state=seed ^ self.individual_seed)
 
         assert len(state_sequence) == 1
@@ -50,7 +50,7 @@ class CapabilityBehaviour:
 
         return self.observations[x[0][0]]
 
-    def peek_interaction(self, seed: int):
+    def peek_interaction(self, seed: int) -> InteractionObservation:
         (x, state_sequence) = self.hmm.sample(1, random_state=seed ^ self.individual_seed)
 
         assert len(state_sequence) == 1
@@ -58,6 +58,10 @@ class CapabilityBehaviour:
         assert len(x[0]) == 1
 
         return self.observations[x[0][0]]
+
+    @property
+    def brs_stereotype(self) -> tuple[int, int]:
+        raise NotImplementedError()
 
 """
 Numpy is row-major
@@ -79,8 +83,6 @@ The observation behaviour is: A : CapabilityBehaviourState x InteractionObservat
 """
 
 class AlwaysGoodBehaviour(CapabilityBehaviour):
-    brs_stereotype = (20, 0)
-
     def __init__(self):
         super().__init__()
 
@@ -96,19 +98,21 @@ class AlwaysGoodBehaviour(CapabilityBehaviour):
             [0, 1]
         ])
 
-    def next_interaction(self, seed: int, t: float):
+    def next_interaction(self, seed: int, t: float) -> InteractionObservation:
         result = super().next_interaction(seed, t)
         assert result is InteractionObservation.Correct
         return result
 
-    def peek_interaction(self, seed: int):
+    def peek_interaction(self, seed: int) -> InteractionObservation:
         result = super().peek_interaction(seed)
         assert result is InteractionObservation.Correct
         return result
 
-class AlwaysBadBehaviour(CapabilityBehaviour):
-    brs_stereotype = (0, 20)
+    @property
+    def brs_stereotype(self) -> tuple[int, int]:
+        return (20, 0)
 
+class AlwaysBadBehaviour(CapabilityBehaviour):
     def __init__(self):
         super().__init__()
 
@@ -124,19 +128,21 @@ class AlwaysBadBehaviour(CapabilityBehaviour):
             [0, 1]
         ])
 
-    def next_interaction(self, seed: int, t: float):
+    def next_interaction(self, seed: int, t: float) -> InteractionObservation:
         result = super().next_interaction(seed, t)
         assert result is InteractionObservation.Incorrect
         return result
 
-    def peek_interaction(self, seed: int):
+    def peek_interaction(self, seed: int) -> InteractionObservation:
         result = super().peek_interaction(seed)
         assert result is InteractionObservation.Incorrect
         return result
 
-class VeryGoodBehaviour(CapabilityBehaviour):
-    brs_stereotype = (19, 1)
+    @property
+    def brs_stereotype(self) -> tuple[int, int]:
+        return (0, 20)
 
+class VeryGoodBehaviour(CapabilityBehaviour):
     def __init__(self):
         super().__init__()
 
@@ -152,9 +158,11 @@ class VeryGoodBehaviour(CapabilityBehaviour):
             [0, 1]
         ])
 
-class GoodBehaviour(CapabilityBehaviour):
-    brs_stereotype = (15, 5)
+    @property
+    def brs_stereotype(self) -> tuple[int, int]:
+        return (19, 1)
 
+class GoodBehaviour(CapabilityBehaviour):
     def __init__(self):
         super().__init__()
 
@@ -170,9 +178,11 @@ class GoodBehaviour(CapabilityBehaviour):
             [0, 1]
         ])
 
-class UnstableBehaviour(CapabilityBehaviour):
-    brs_stereotype = (10, 10)
+    @property
+    def brs_stereotype(self) -> tuple[int, int]:
+        return (15, 5)
 
+class UnstableBehaviour(CapabilityBehaviour):
     def __init__(self):
         super().__init__()
 
@@ -187,3 +197,7 @@ class UnstableBehaviour(CapabilityBehaviour):
             [0.9, 0.1],
             [0, 1]
         ])
+
+    @property
+    def brs_stereotype(self) -> tuple[int, int]:
+        return (10, 10)

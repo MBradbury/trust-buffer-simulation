@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import random
+from typing import Any
+
 class Capability:
     def __init__(self, name: str, task_period: float, priority: int):
         self.name = name
@@ -16,7 +19,7 @@ class Capability:
         return self.name
 
     # Can't allow this to be copied
-    def __deepcopy__(self, memo):
+    def __deepcopy__(self, memo: Any):
         return self
 
     # Can't allow this to be copied

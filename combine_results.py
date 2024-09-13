@@ -1,19 +1,20 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 from __future__ import annotations
 
 import os
 import bz2
 import fnmatch
-from pprint import pprint
-from dataclasses import dataclass
 import multiprocessing
 import pickle
 import tqdm
+import argparse
 
 import numpy as np
 
+from simulation.metrics import Metrics
+
 class ParametersDifferError(RuntimeError):
-    def __init__(self, self_args, m_args):
+    def __init__(self, self_args: argparse.Namespace, m_args: argparse.Namespace):
         self_args_dict = vars(self_args)
         self.params_diff_m_args = {k: v for (k, v) in vars(m_args).items() if k not in self_args_dict or self_args_dict[k] != v}
         self.params_diff_self_args = {k: v for (k, v) in self_args_dict if k in self.params_diff_m_args}
@@ -23,10 +24,11 @@ class ParametersDifferError(RuntimeError):
 class CombinedMetrics:
     def __init__(self):
         self.normed_utilities = []
-        self.args = None
+        self.args: argparse.Namespace | None = None
 
     def update(self, m: Metrics):
         if self.args is None:
+            assert m.args is not None
             self.args = m.args
             self.args.seed = None
         else:
@@ -40,12 +42,12 @@ class CombinedMetrics:
         pass
 
     def num_agents(self) -> int:
-        return sum(num_agents for (num_agents, behaviour) in self.args.agents)
+        return sum(num_agents for (num_agents, _behaviour) in self.args.agents)
 
     def num_capabilities(self) -> int:
         return self.args.num_capabilities
 
-def fn(args):
+def fn(args: argparse.Namespace):
     (metrics_dir, prefix, files) = args
 
     print(f"Processing {metrics_dir} {prefix} {len(files)} files...")
@@ -79,7 +81,7 @@ def fn(args):
     with bz2.open(target_path, "wb") as f:
         pickle.dump(m, f)
 
-def main(args):
+def main(args: argparse.Namespace):
     metrics_paths = {
         metrics_dir: [
             file
@@ -122,8 +124,6 @@ def main(args):
             pass
 
 if __name__ == "__main__":
-    import argparse
-
     parser = argparse.ArgumentParser(description='Analyse')
     parser.add_argument('metrics_dirs', type=str, nargs="+",
                         help='The path to the directory of metrics to analyse')

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 from __future__ import annotations
 
 import bz2
@@ -6,7 +6,6 @@ import itertools
 import functools
 import os
 import fnmatch
-from typing import Dict
 import gc
 from collections import defaultdict
 import pickle
@@ -28,7 +27,7 @@ from combine_results import CombinedMetrics
 plt.rcParams['text.usetex'] = True
 plt.rcParams['font.size'] = 12
 
-def graph_utility_summary(all_metrics: Dict[str, CombinedMetrics], path_prefix: str):
+def graph_utility_summary(all_metrics: dict[str, CombinedMetrics], path_prefix: str):
 
     all_utilities = {
         path.split("-")[0]: metrics.normed_utilities
@@ -70,7 +69,7 @@ def get_box_plot_data(labels, bp):
 
     return pd.DataFrame(rows_list)
 
-def graph_utility_summary_grouped_es(all_metrics: Dict[str, CombinedMetrics], path_prefix: str):
+def graph_utility_summary_grouped_es(all_metrics: dict[str, CombinedMetrics], path_prefix: str):
 
     print(len(all_metrics))
 
@@ -190,7 +189,7 @@ def metrics_capacity(metrics: CombinedMetrics) -> float:
     return (crypto_capacity + trust_capacity + reputation_capacity + stereotype_capacity) / 4
 
 
-def graph_capacity_utility_es(all_metrics: Dict[str, CombinedMetrics], path_prefix: str):
+def graph_capacity_utility_es(all_metrics: dict[str, CombinedMetrics], path_prefix: str):
 
     print(len(all_metrics))
 
@@ -240,7 +239,7 @@ def graph_capacity_utility_es(all_metrics: Dict[str, CombinedMetrics], path_pref
         plt.close(fig)
         gc.collect()
 
-def graph_size_utility_es(all_metrics: Dict[str, CombinedMetrics], path_prefix: str):
+def graph_size_utility_es(all_metrics: dict[str, CombinedMetrics], path_prefix: str):
     behaviours = list(sorted({path[0] for path in all_metrics.keys()}))
     sizes = list(sorted({path[-1] for path in all_metrics.keys()}))
 

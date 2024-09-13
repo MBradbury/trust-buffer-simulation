@@ -12,9 +12,20 @@ Different buffer eviction strategies are implemented to evaluate which produces 
 
 # Requirements
 
+Install dependencies
 ```bash
-sudo apt-get install python3 cm-super graphviz
-python3 -m pip install matplotlib numpy scipy hmmlearn tqdm pygraphviz seaborn
+sudo apt-get install python3 cm-super graphviz graphviz-dev
+```
+
+Set up a venv
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+Install Python dependencies
+```bash
+python -m pip install matplotlib numpy scipy hmmlearn tqdm pygraphviz seaborn more_itertools frozenlist
 ```
 
 # Running an Experiment
