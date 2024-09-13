@@ -10,19 +10,18 @@ from simulation.agent_choose_behaviour import AgentChooseBehaviour
 from simulation.capability import Capability
 from simulation.capability_behaviour import CapabilityBehaviour
 from simulation.eviction_strategy import EvictionStrategy
-from simulation.metrics import Metrics
 from simulation.simulator import Simulator
 from simulation.utility_targets import UtilityTargets
 
-def get_eviction_strategy(short_name: str):
+def get_eviction_strategy(short_name: str) -> type[EvictionStrategy]:
     [cls] = [cls for cls in EvictionStrategy.__subclasses__() if cls.short_name == short_name]
     return cls
 
-def get_behaviour(name: str):
+def get_behaviour(name: str) -> type[CapabilityBehaviour]:
     [cls] = [cls for cls in CapabilityBehaviour.__subclasses__() if cls.__name__ == name]
     return cls
 
-def get_agent_choose_behaviour(name: str):
+def get_agent_choose_behaviour(name: str) -> type[AgentChooseBehaviour]:
     [cls] = [cls for cls in AgentChooseBehaviour.__subclasses__() if cls.short_name == name]
     return cls
 
@@ -40,9 +39,18 @@ def main(args):
 
     # Assume that each agent has all capabilities
     agents = [
-        Agent(f"A{n}", capabilities, get_behaviour(behaviour), choose, args.trust_dissem_period,
-              args.max_crypto_buf, args.max_trust_buf,
-              args.max_reputation_buf, args.max_stereotype_buf)
+        Agent(f"A{n}",
+              capabilities,
+              get_behaviour(behaviour),
+              choose,
+              args.trust_dissem_period,
+              args.challenge_response_period,
+              args.challenge_execution_time,
+              args.max_crypto_buf,
+              args.max_trust_buf,
+              args.max_reputation_buf,
+              args.max_stereotype_buf,
+              args.max_cr_buf)
 
         for (n, behaviour) in enumerate(chain.from_iterable(agent_behaviours))
     ]
@@ -55,13 +63,13 @@ def main(args):
 
     sim.metrics.save(sim, args, args.path_prefix)
 
-def eviction_strategies():
+def eviction_strategies() -> list[str]:
     return [cls.short_name for cls in EvictionStrategy.__subclasses__()]
 
-def behaviours():
+def behaviours() -> list[str]:
     return [cls.__name__ for cls in CapabilityBehaviour.__subclasses__()]
 
-def agent_choose_behaviours():
+def agent_choose_behaviours() -> list[str]:
     return [cls.short_name for cls in AgentChooseBehaviour.__subclasses__()]
 
 # From: https://stackoverflow.com/questions/8526675/python-argparse-optional-append-argument-with-choices
@@ -116,6 +124,13 @@ if __name__ == "__main__":
                         help='The maximum length of the reputation buffer')
     parser.add_argument('--max-stereotype-buf', type=int, required=True,
                         help='The maximum length of the stereotype buffer')
+    parser.add_argument('--max-cr-buf', type=int, required=False, default=0,
+                        help='The maximum length of the challenge-response buffer')
+
+    parser.add_argument('--challenge-response-period', type=float, default=None,
+                        help='If challenge-response is enabled, how often should challenge-response be sent')
+    parser.add_argument('--challenge-execution-time', type=float, default=None,
+                        help='How long it takes to execute a challenge')
 
     parser.add_argument('--eviction-strategy', type=str, required=True, choices=eviction_strategies(),
                         help='The eviction strategy')

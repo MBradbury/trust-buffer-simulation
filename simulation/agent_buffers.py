@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from simulation.agent import Agent
     from simulation.eviction_strategy import EvictionStrategy
 
-@dataclass
+@dataclass(slots=True)
 class CryptoItem:
     agent: Agent
 
@@ -22,7 +22,7 @@ class CryptoItem:
     def basic(self):
         return (self.agent.name,)
 
-@dataclass
+@dataclass(slots=True)
 class TrustItem:
     agent: Agent
     capability: Capability
@@ -51,10 +51,10 @@ class TrustItem:
     def basic(self):
         return (self.agent.name, self.capability.name)
 
-@dataclass(repr=False)
+@dataclass(repr=False, slots=True)
 class ReputationItem:
     agent: Agent
-    trust_items: BoundedList[TrustItem] # list[TrustItem]
+    trust_items: BoundedList[TrustItem]
 
     eviction_data: Any = None
 
@@ -64,7 +64,7 @@ class ReputationItem:
     def basic(self):
         return (self.agent.name, [trust_item.basic() for trust_item in self.trust_items])
 
-@dataclass
+@dataclass(slots=True)
 class StereotypeItem:
     agent: Agent
     capability: Capability
@@ -74,28 +74,63 @@ class StereotypeItem:
     def basic(self):
         return (self.agent.name, self.capability.name)
 
-class AgentBuffers:
-    buffers = ("crypto", "trust", "reputation", "stereotype")
+@dataclass(slots=True)
+class ChallengeResponseItem:
+    agent: Agent
 
-    def __init__(self, agent: Agent, crypto_bux_max: int, trust_bux_max: int, reputation_bux_max: int, stereotype_bux_max: int):
+    good: bool
+    epoch: int = 0
+
+    eviction_data: Any = None
+
+    def basic(self):
+        return (self.agent.name,)
+
+    def record(self, outcome: InteractionObservation):
+        old_good = self.good
+
+        if outcome == InteractionObservation.Correct:
+            self.good = True
+        else:
+            self.good = False
+
+        # Increment epoch when changing goodness
+        if old_good != self.good:
+            self.epoch += 1
+
+class AgentBuffers:
+    def __init__(self,
+                 agent: Agent,
+                 crypto_bux_max: int,
+                 trust_bux_max: int,
+                 reputation_bux_max: int,
+                 stereotype_bux_max: int,
+                 cr_buf_max: int):
         self.agent = agent
 
         self.crypto = BoundedList[CryptoItem](length=crypto_bux_max)
         self.trust = BoundedList[TrustItem](length=trust_bux_max)
         self.reputation = BoundedList[ReputationItem](length=reputation_bux_max)
         self.stereotype = BoundedList[StereotypeItem](length=stereotype_bux_max)
+        self.cr = BoundedList[ChallengeResponseItem](length=cr_buf_max)
 
-    def frozen(self) -> AgentBuffers:
+    def frozen_copy(self) -> AgentBuffers:
         f = copy.deepcopy(self)
-        for b in f.buffers:
-            getattr(f, b).freeze()
+        f.crypto.freeze()
+        f.trust.freeze()
+        f.reputation.freeze()
+        f.stereotype.freeze()
+        f.cr.freeze()
 
         return f
 
-    def basic(self) -> dict[str, list[Any]]:
+    def basic(self) -> dict[str, list[tuple[Any, ...]]]:
         return {
-            b: [x.basic() for x in getattr(self, b)]
-            for b in self.buffers
+            "crypto":       [x.basic() for x in self.crypto],
+            "trust":        [x.basic() for x in self.trust],
+            "reputation":   [x.basic() for x in self.reputation],
+            "stereotype":   [x.basic() for x in self.stereotype],
+            "cr":           [x.basic() for x in self.cr],
         }
 
     def find_crypto(self, agent: Agent) -> CryptoItem | None:
@@ -162,7 +197,14 @@ class AgentBuffers:
 
         return result
 
-    def buffer_has_agent_count(self, agent: Agent, buffers: str="CTRS") -> int:
+    def find_challenge_response(self, agent: Agent) -> ChallengeResponseItem | None:
+        for item in self.cr:
+            if item.agent is agent:
+                return item
+
+        return None
+
+    def buffer_has_agent_count(self, agent: Agent, buffers: str="CTRSE") -> int:
         result = 0
 
         if "C" in buffers:
@@ -181,9 +223,13 @@ class AgentBuffers:
             if self.find_stereotype_by_agent(agent):
                 result += 1
 
+        if "E" in buffers:
+            if self.find_challenge_response(agent):
+                result += 1
+
         return result
 
-    def buffer_has_agent_capability_count(self, agent: Agent, capability: Capability, buffers: str="CTRS") -> int:
+    def buffer_has_agent_capability_count(self, agent: Agent, capability: Capability, buffers: str="CTRSE") -> int:
         result = 0
 
         if "C" in buffers:
@@ -200,6 +246,10 @@ class AgentBuffers:
 
         if "S" in buffers:
             if self.find_stereotype(agent, capability):
+                result += 1
+
+        if "E" in buffers:
+            if self.find_challenge_response(agent):
                 result += 1
 
         return result
@@ -273,6 +323,23 @@ class AgentBuffers:
                 return
 
         es.add_stereotype(item)
+
+    def add_challenge_response(self, es: EvictionStrategy, item: ChallengeResponseItem):
+        try:
+            self.cr.append(item)
+        except BoundExceedError:
+            choice = es.choose_challenge_response(self.cr, self, item)
+            if choice is not None:
+                self.cr.remove(choice)
+                self.log(f"Evicted {choice} from {[x.basic() for x in self.cr]}")
+                assert self.agent.sim is not None
+                self.agent.sim.metrics.add_evicted_challenge_response(self.agent.sim.current_time, self.agent, choice)
+
+                self.cr.append(item)
+            else:
+                return
+
+        es.add_challenge_response(item)
 
     def utility(self, agent: Agent, capability: Capability, targets: list[Agent] | None=None):
         sim = agent.sim

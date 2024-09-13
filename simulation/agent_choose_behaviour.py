@@ -62,6 +62,7 @@ class BRSAgentChooseBehaviour(AgentChooseBehaviour):
     def choose_agent_for_task(self, agent: Agent, capability: Capability) -> Optional[CryptoItem]:
         assert agent.sim is not None
 
+        # Needs to be in crypto
         options = [item for item in agent.buffers.crypto if capability in item.agent.capabilities]
         if not options:
             return None
@@ -73,5 +74,29 @@ class BRSAgentChooseBehaviour(AgentChooseBehaviour):
 
         try:
             return agent.sim.rng.choice([item for item in options if trust_values[item.agent] >= max_trust_value - 0.1])
+        except IndexError:
+            return None
+
+class ChallengeResponseAgentChooseBehaviour(AgentChooseBehaviour):
+    short_name = "CR"
+
+    def choose_agent_for_task(self, agent: Agent, capability: Capability) -> Optional[CryptoItem]:
+        assert agent.sim is not None
+
+        # Needs to be in crypto
+        options = [item for item in agent.buffers.crypto if capability in item.agent.capabilities]
+        if not options:
+            return None
+
+        # Needs to be good in challenge-response buffer
+        options = [
+            item
+            for item in options
+            for cr in [agent.buffers.find_challenge_response(item.agent)]
+            if cr is not None and cr.good
+        ]
+
+        try:
+            return agent.sim.rng.choice(options)
         except IndexError:
             return None

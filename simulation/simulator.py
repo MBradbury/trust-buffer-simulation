@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 from __future__ import annotations
 
 import random
@@ -11,7 +10,13 @@ from simulation.utility_targets import UtilityTargets
 from simulation.eviction_strategy import EvictionStrategy
 
 class Simulator:
-    def __init__(self, seed: int, agents: list[Agent], escls: type[EvictionStrategy], duration: float, utility_targets: UtilityTargets, log_level: int):
+    def __init__(self,
+                 seed: int,
+                 agents: list[Agent],
+                 escls: type[EvictionStrategy],
+                 duration: float,
+                 utility_targets: UtilityTargets,
+                 log_level: int):
         # Initialise the PRNG and record the seed
         self.seed = seed
         self.rng = random.Random(self.seed)
@@ -25,7 +30,7 @@ class Simulator:
         self.duration = duration
         self.utility_targets = utility_targets
 
-        self.current_time = 0
+        self.current_time: float = 0
         self.queue: list[BaseEvent] = []
 
         self.metrics = Metrics()

@@ -17,7 +17,7 @@ def graph_space(path_prefix: str):
     fig = plt.figure()
     ax = fig.gca()
 
-    def fn(v, c, t):
+    def fn(v: int, c: int, t: int) -> int:
         crypto = 160 * v
         #trust = t * v + t * v * c
         trust = t * v * c

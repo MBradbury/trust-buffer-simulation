@@ -25,7 +25,7 @@ source .venv/bin/activate
 
 Install Python dependencies
 ```bash
-python -m pip install matplotlib numpy scipy hmmlearn tqdm pygraphviz seaborn more_itertools frozenlist
+python -m pip install matplotlib numpy scipy hmmlearn tqdm pygraphviz seaborn more_itertools frozenlist typing_extensions
 ```
 
 # Running an Experiment

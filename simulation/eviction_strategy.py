@@ -5,11 +5,13 @@ from typing import Optional, TypeVar, Sequence
 import numpy as np
 
 from typing import TYPE_CHECKING
+
+from simulation.agent_buffers import AgentBuffers, ChallengeResponseItem
 if TYPE_CHECKING:
     from simulation.simulator import Simulator
-    from simulation.agent_buffers import AgentBuffers, CryptoItem, TrustItem, ReputationItem, StereotypeItem
+    from simulation.agent_buffers import AgentBuffers, CryptoItem, TrustItem, ReputationItem, StereotypeItem, ChallengeResponseItem
 
-ItemT = TypeVar('ItemT', CryptoItem, TrustItem, ReputationItem, StereotypeItem)
+    ItemT = TypeVar('ItemT', CryptoItem, TrustItem, ReputationItem, StereotypeItem, ChallengeResponseItem)
 
 class EvictionStrategy:
     short_name = "Base"
@@ -28,6 +30,8 @@ class EvictionStrategy:
         return self.add_common(item)
     def add_stereotype(self, item: StereotypeItem):
         return self.add_common(item)
+    def add_challenge_response(self, item: ChallengeResponseItem):
+        return self.add_common(item)
 
     def choose_common(self, items: Sequence[ItemT], buffers: AgentBuffers, new_item: ItemT) -> Optional[ItemT]:
         raise NotImplementedError()
@@ -40,6 +44,8 @@ class EvictionStrategy:
         return self.choose_common(items, buffers, new_item)
     def choose_stereotype(self, items: Sequence[StereotypeItem], buffers: AgentBuffers, new_item: StereotypeItem) -> Optional[StereotypeItem]:
         return self.choose_common(items, buffers, new_item)
+    def choose_challenge_response(self, items: Sequence[ChallengeResponseItem], buffers: AgentBuffers, new_item: ChallengeResponseItem) -> Optional[ChallengeResponseItem]:
+        return self.choose_common(items, buffers, new_item)
 
     def use_common(self, item: ItemT | None):
         pass
@@ -51,6 +57,8 @@ class EvictionStrategy:
     def use_reputation(self, item: ReputationItem | None):
         return self.use_common(item)
     def use_stereotype(self, item: StereotypeItem | None):
+        return self.use_common(item)
+    def use_challenge_response(self, item: ChallengeResponseItem | None):
         return self.use_common(item)
 
 class NoneEvictionStrategy(EvictionStrategy):
@@ -252,6 +260,10 @@ class NotInOtherEvictionStrategy(EvictionStrategy):
         ]
         return self._lru(choices)
 
+    def choose_challenge_response(self, items: Sequence[ChallengeResponseItem], buffers: AgentBuffers, new_item: ChallengeResponseItem) -> ChallengeResponseItem | None:
+        # Do LRU
+        return min(items, key=lambda x: x.eviction_data)
+
     def use_common(self, item: ItemT | None):
         if item is None:
             return
@@ -303,6 +315,10 @@ class MinNotInOtherEvictionStrategy(EvictionStrategy):
         ]
         return self._lru(choices)
 
+    def choose_challenge_response(self, items: Sequence[ChallengeResponseItem], buffers: AgentBuffers, new_item: ChallengeResponseItem) -> ChallengeResponseItem | None:
+        # Do LRU
+        return min(items, key=lambda x: x.eviction_data)
+
     def use_common(self, item: ItemT | None):
         if item is None:
             return
@@ -337,6 +353,10 @@ class CapabilityPriorityEvictionStrategy(EvictionStrategy):
 
     def choose_stereotype(self, items: Sequence[StereotypeItem], buffers: AgentBuffers, new_item: StereotypeItem) -> Optional[StereotypeItem]:
         return self._lru([(item, item.capability.priority) for item in items])
+
+    def choose_challenge_response(self, items: Sequence[ChallengeResponseItem], buffers: AgentBuffers, new_item: ChallengeResponseItem) -> ChallengeResponseItem | None:
+        # Do LRU
+        return min(items, key=lambda x: x.eviction_data)
 
     def use_common(self, item: ItemT | None):
         if item is None:

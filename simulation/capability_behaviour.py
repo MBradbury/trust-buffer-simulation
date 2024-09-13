@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from enum import Enum
 
-from hmmlearn.hmm import MultinomialHMM
+from hmmlearn.hmm import CategoricalHMM
 import numpy as np
 
 class CapabilityBehaviourState(Enum):
@@ -18,7 +18,7 @@ class CapabilityBehaviour:
         self.states = list(CapabilityBehaviourState)
         self.observations = list(InteractionObservation)
 
-        self.hmm = MultinomialHMM(n_components=len(self.states))
+        self.hmm = CategoricalHMM(n_components=len(self.states))
 
         self.state_history: list[tuple[float, CapabilityBehaviourState]] = []
 

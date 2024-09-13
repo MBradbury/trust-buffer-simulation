@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from functools import total_ordering
 
 from simulation.capability_behaviour import InteractionObservation
@@ -14,9 +13,9 @@ if TYPE_CHECKING:
     from simulation.capability import Capability
 
 @total_ordering
-@dataclass(eq=False)
 class BaseEvent:
-    event_time: float
+    def __init__(self, event_time: float):
+        self.event_time = event_time
 
     def log(self, sim: Simulator, message: str):
         sim.log(f"event|{self!r}|{message}")
@@ -30,6 +29,16 @@ class BaseEvent:
     def __lt__(self, other: BaseEvent):
         return self.event_time < other.event_time
 
+class BaseCryptoEvent(BaseEvent):
+    def _ensure_crypto_exists(self, sim: Simulator, agent: Agent, other: Agent):
+        crypto = agent.buffers.find_crypto(other)
+        if crypto is None:
+            agent.receive_crypto_information(other)
+            crypto = agent.buffers.find_crypto(other)
+        if crypto is not None:
+            sim.es.use_crypto(crypto)
+        return crypto is not None
+
 class AgentInit(BaseEvent):
     def __init__(self, event_time: float, agent: Agent):
         super().__init__(event_time)
@@ -42,6 +51,9 @@ class AgentInit(BaseEvent):
 
         for capability in self.agent.capabilities:
             sim.add_event(AgentCapabilityTask(self.event_time + capability.next_task_period(sim.rng), self.agent, capability))
+
+        if self.agent.challenge_response_period is not None:
+            sim.add_event(AgentSendChallenge(self.event_time + self.agent.challenge_response_period, self.agent))
 
     def __repr__(self):
         return f"{type(self).__name__}({self.agent!s})"
@@ -65,27 +77,19 @@ class AgentCapabilityTask(BaseEvent):
             self.log(sim, "Unable to select agent to perform task")
 
         # Re-add this event
-        sim.add_event(AgentCapabilityTask(self.event_time + self.capability.next_task_period(sim.rng), self.agent, self.capability))
+        self.event_time += self.capability.next_task_period(sim.rng)
+        sim.add_event(self)
 
     def __repr__(self):
         return f"{type(self).__name__}({self.agent!s}, {self.capability!s})"
 
-class AgentTaskInteraction(BaseEvent):
+class AgentTaskInteraction(BaseCryptoEvent):
     def __init__(self, event_time: float, source: Agent, capability: Capability, target: Agent, buffers: AgentBuffers):
         super().__init__(event_time)
         self.source = source
         self.capability = capability
         self.target = target
         self.buffers = buffers
-
-    def _ensure_crypto_exists(self, sim: Simulator, agent: Agent, other: Agent):
-        crypto = agent.buffers.find_crypto(other)
-        if crypto is None:
-            agent.receive_crypto_information(other)
-            crypto = agent.buffers.find_crypto(other)
-        if crypto is not None:
-            sim.es.use_crypto(crypto)
-        return crypto is not None
 
     def action(self, sim: Simulator):
         super().action(sim)
@@ -150,7 +154,8 @@ class AgentTrustDissemination(BaseEvent):
                 agent.receive_trust_information(self.agent)
 
         # Re-add this event
-        sim.add_event(AgentTrustDissemination(self.event_time + self.agent.next_trust_dissemination_period(sim.rng), self.agent))
+        self.event_time += self.agent.next_trust_dissemination_period(sim.rng)
+        sim.add_event(self)
 
     def __repr__(self):
         return f"{type(self).__name__}({self.agent!s})"
@@ -183,3 +188,44 @@ class AgentStereotypeRequest(BaseEvent):
 
     def __repr__(self):
         return f"{type(self).__name__}(req={self.requester!s}, of={self.agent!s})"
+
+class AgentSendChallenge(BaseEvent):
+    def __init__(self, event_time: float, requester: Agent):
+        super().__init__(event_time)
+        self.requester = requester
+
+    def action(self, sim: Simulator):
+        super().action(sim)
+        assert self.requester.challenge_response_period is not None
+
+        # Send challenge to everyone in crypto
+        for crypto in self.requester.buffers.crypto:
+            crypto.agent.receive_challenge(self.requester)
+
+        # Re-add this event
+        self.event_time += self.requester.challenge_response_period
+        sim.add_event(self)
+
+    def __repr__(self):
+        return f"{type(self).__name__}(req={self.requester!s})"
+
+class AgentReceiveChallengeResponse(BaseCryptoEvent):
+    def __init__(self, event_time: float, requester: Agent, agent: Agent, behaviour: InteractionObservation):
+        super().__init__(event_time)
+        self.requester = requester
+        self.agent = agent
+        self.behaviour = behaviour
+
+    def action(self, sim: Simulator):
+        super().action(sim)
+
+        # Process response
+
+        # We need to make sure we have their cryptographic information to process the response
+        our_crypto = self._ensure_crypto_exists(sim, self.requester, self.agent)
+        assert our_crypto
+
+        self.requester.update_challenge_response(self.agent, self.behaviour)
+
+    def __repr__(self):
+        return f"{type(self).__name__}(req={self.requester!s})"

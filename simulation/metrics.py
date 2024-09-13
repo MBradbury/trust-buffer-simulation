@@ -4,6 +4,7 @@ from simulation.agent import Agent
 from simulation.capability import Capability
 from simulation.capability_behaviour import InteractionObservation
 
+import pathlib
 import bz2
 from itertools import chain
 from dataclasses import dataclass
@@ -14,9 +15,9 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import argparse
     from simulation.simulator import Simulator
-    from simulation.agent_buffers import CryptoItem, TrustItem, ReputationItem, StereotypeItem
+    from simulation.agent_buffers import CryptoItem, TrustItem, ReputationItem, StereotypeItem, ChallengeResponseItem
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class BufferEvaluation:
     t: float
     source: str
@@ -37,6 +38,7 @@ class Metrics:
         self.evicted_trust: list[tuple[float, str, tuple[str, str]]] = []
         self.evicted_reputation: list[tuple[float, str, tuple[str, list[tuple[str, str]]]]] = []
         self.evicted_stereotype: list[tuple[float, str, tuple[str, str]]] = []
+        self.evicted_challenge_response: list[tuple[float, str, tuple[str]]] = []
 
     def add_buffer_evaluation(self, t: float,
                               source: Agent, capability: Capability,
@@ -66,6 +68,8 @@ class Metrics:
         self.evicted_reputation.append((t, agent.name, choice.basic()))
     def add_evicted_stereotype(self, t: float, agent: Agent, choice: StereotypeItem):
         self.evicted_stereotype.append((t, agent.name, choice.basic()))
+    def add_evicted_challenge_response(self, t: float, agent: Agent, choice: ChallengeResponseItem):
+        self.evicted_challenge_response.append((t, agent.name, choice.basic()))
 
     def add_interaction_performed(self, t: float, agent: Agent, capability: Capability):
         self.interaction_performed.append((t, agent.name, capability.name))
@@ -87,7 +91,11 @@ class Metrics:
             for (capability, behaviour) in agent.capability_behaviour.items()
         }
 
-        with bz2.open(f"{path_prefix}metrics.{sim.seed}.pickle.bz2", "wb") as f:
+        path = pathlib.Path(f"{path_prefix}metrics.{sim.seed}.pickle.bz2")
+
+        path.parent.mkdir(exist_ok=True, parents=True)
+
+        with bz2.open(path, "wb") as f:
             pickle.dump(self, f, protocol=pickle.HIGHEST_PROTOCOL)
 
     def num_agents(self) -> int:
