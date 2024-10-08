@@ -8,6 +8,8 @@ from simulation.bounded_list import BoundExceedError, BoundedList
 from simulation.capability import Capability
 from simulation.capability_behaviour import InteractionObservation
 
+from cuckoopy import CuckooFilter
+
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from simulation.agent import Agent
@@ -80,6 +82,7 @@ class ChallengeResponseItem:
 
     good: bool
     epoch: int = 0
+    sequential_fails: int = 0
 
     eviction_data: Any = None
 
@@ -98,6 +101,12 @@ class ChallengeResponseItem:
         if old_good != self.good:
             self.epoch += 1
 
+        # Update sequential fails
+        if self.good:
+            self.sequential_fails = 0
+        else:
+            self.sequential_fails += 1
+
 class AgentBuffers:
     def __init__(self,
                  agent: Agent,
@@ -105,7 +114,8 @@ class AgentBuffers:
                  trust_bux_max: int,
                  reputation_bux_max: int,
                  stereotype_bux_max: int,
-                 cr_buf_max: int):
+                 cr_buf_max: int,
+                 cuckoo: bool):
         self.agent = agent
 
         self.crypto = BoundedList[CryptoItem](length=crypto_bux_max)
@@ -113,6 +123,12 @@ class AgentBuffers:
         self.reputation = BoundedList[ReputationItem](length=reputation_bux_max)
         self.stereotype = BoundedList[StereotypeItem](length=stereotype_bux_max)
         self.cr = BoundedList[ChallengeResponseItem](length=cr_buf_max)
+
+        self.badlist = None
+        self.encountered = None
+        if cuckoo:
+            self.badlist = CuckooFilter(capacity=10000, bucket_size=4, fingerprint_size=1)
+            self.encountered = CuckooFilter(capacity=10000, bucket_size=4, fingerprint_size=1)
 
     def frozen_copy(self) -> AgentBuffers:
         f = copy.deepcopy(self)

@@ -30,8 +30,14 @@ class Agent:
                  trust_bux_max: int,
                  reputation_bux_max: int,
                  stereotype_bux_max: int,
-                 cr_bux_max: int):
+                 cr_bux_max: int,
+                 cuckoo: bool):
         self.name = name
+
+        # Generate a EUI64, use the name as the random seed as this should be unique
+        # We use a EUI64 as this is typically used by the target devices
+        self.eui64 = random.Random(self.name).randbytes(8)
+
         self.capabilities = capabilities
         self.capability_behaviour = {capability: behaviour() for capability in self.capabilities}
 
@@ -50,7 +56,7 @@ class Agent:
             if self.challenge_execution_time is None:
                 raise ValueError("Must set challenge_execution_time if challenge_response_period is set")
 
-        self.buffers = AgentBuffers(self, crypto_bux_max, trust_bux_max, reputation_bux_max, stereotype_bux_max, cr_bux_max)
+        self.buffers = AgentBuffers(self, crypto_bux_max, trust_bux_max, reputation_bux_max, stereotype_bux_max, cr_bux_max, cuckoo)
 
         self.sim: Simulator | None = None
 
@@ -228,6 +234,10 @@ class Agent:
     def update_challenge_response(self, agent: Agent, outcome: InteractionObservation):
         assert self.sim is not None
 
+        # Record seen
+        if self.buffers.encountered is not None:
+            self.buffers.encountered.insert(agent.eui64)
+
         cr_item = self.buffers.find_challenge_response(agent)
 
         # Need to add item if not in buffer
@@ -241,6 +251,13 @@ class Agent:
 
         if cr_item is not None:
             cr_item.record(outcome)
+
+            # Record in cuckoo filters the stats
+            if self.buffers.badlist is not None:
+                if cr_item.good:
+                    self.buffers.badlist.delete(agent.eui64)
+                else:
+                    self.buffers.badlist.insert(agent.eui64)
 
             # Record that we have used it
             self.sim.es.use_challenge_response(cr_item)

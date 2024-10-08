@@ -100,3 +100,48 @@ class ChallengeResponseAgentChooseBehaviour(AgentChooseBehaviour):
             return agent.sim.rng.choice(options)
         except IndexError:
             return None
+
+class CuckooAgentChooseBehaviour(AgentChooseBehaviour):
+    short_name = "Cuckoo"
+
+    def choose_agent_for_task(self, agent: Agent, capability: Capability) -> Optional[CryptoItem]:
+        assert agent.sim is not None
+        assert agent.buffers.badlist is not None
+        assert agent.buffers.encountered is not None
+
+        # Needs to be in crypto
+        options = [item for item in agent.buffers.crypto if capability in item.agent.capabilities]
+        if not options:
+            return None
+
+        # Levels of preference
+        # 1. Is not in badlist and is in encountered (seen and known to be good)
+        # 2. Is not in encountered (not previously seen)
+        # 3. Is in badlist (known to be bad)
+
+        # Try and find items that are not in the badlist that we have encountered
+        options = [
+            item
+            for item in options
+            if not agent.buffers.badlist.contains(item.agent.eui64)
+            if agent.buffers.encountered.contains(item.agent.eui64)
+        ]
+
+        # No seen and known to be good items
+        if not options:
+            # Fall back to not previously seen items
+            options = [
+                item
+                for item in options
+                if not agent.buffers.badlist.contains(item.agent.eui64)
+                if not agent.buffers.encountered.contains(item.agent.eui64)
+            ]
+
+        if not options:
+            # No good options at this point, everyone is known to be bad
+            assert all(agent.buffers.badlist.contains(item.agent.eui64) for item in options)
+
+        try:
+            return agent.sim.rng.choice(options)
+        except IndexError:
+            return None
