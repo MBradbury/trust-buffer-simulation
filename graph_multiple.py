@@ -3,14 +3,12 @@ from __future__ import annotations
 
 import bz2
 import itertools
-import functools
 import os
 import fnmatch
 import gc
 import pickle
 from typing import cast
 import statistics
-from typing import Any, Callable
 
 import numpy as np
 import pandas as pd

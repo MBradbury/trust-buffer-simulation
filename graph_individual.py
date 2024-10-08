@@ -244,6 +244,9 @@ def graph_interactions(metrics: Metrics, path_prefix: str):
     for (agent, cap) in itertools.product(agents, capabilities):
         interactions = all_interactions.get((agent, cap), [])
 
+        if not interactions:
+            continue
+
         X, Y = zip(*interactions)
 
         ax = axs[agents.index(agent), capabilities.index(cap)]
