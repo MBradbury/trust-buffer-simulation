@@ -195,14 +195,8 @@ def graph_behaviour_state(metrics: Metrics, path_prefix: str):
 
     fig, axs = plt.subplots(nrows=len(agents), ncols=len(capabilities), sharex=True, squeeze=False, figsize=(18,20))
 
-    yaxis_categories = [obs.name for obs in CapabilityBehaviourState]
-
     for (agent, cap) in itertools.product(agents, capabilities):
-        try:
-            behaviour = metrics.behaviour_changes[(agent, cap)]
-        except KeyError:
-            # Skip when there are no records
-            continue
+        behaviour = metrics.behaviour_changes.get((agent, cap), [])
 
         # Skip when there were no interactions
         if not behaviour:
@@ -217,11 +211,6 @@ def graph_behaviour_state(metrics: Metrics, path_prefix: str):
 
         ax.title.set_text(f"{agent} {cap}")
 
-        #ax.set_xlim(min(X), max(X))
-        #ax.plot([min(X)-100+i for i in range(len(yaxis_categories))], yaxis_categories)
-        #ax.set_yticks(yaxis_categories)
-        #ax.set_ylim(0 - 0.5, len(yaxis_categories) - 1 + 0.5)
-
     fig.subplots_adjust(hspace=0.35)
 
     savefig(fig, f"{path_prefix}behaviour_state.pdf")
@@ -233,7 +222,12 @@ def graph_interactions(metrics: Metrics, path_prefix: str):
 
     all_interactions = {
         (target, capability): [
-            (b.t, f"{b.outcome.name} (Imp)" if np.isnan(b.utility) else b.outcome.name)
+            (
+                b.t,
+                f"{b.outcome.name} (Imp) to {b.source}"
+                if np.isnan(b.utility) else
+                f"{b.outcome.name} to {b.source}"
+            )
 
             for b in metrics.buffers
             if b.target == target and b.capability == capability
@@ -247,18 +241,8 @@ def graph_interactions(metrics: Metrics, path_prefix: str):
 
     fig, axs = plt.subplots(nrows=len(agents), ncols=len(capabilities), sharex=True, squeeze=False, figsize=(18,20))
 
-    yaxis_categories = [obs.name for obs in InteractionObservation]
-
     for (agent, cap) in itertools.product(agents, capabilities):
-        try:
-            interactions = all_interactions[(agent, cap)]
-        except KeyError:
-            # Skip when there are no records
-            continue
-
-        # Skip when there were no interactions
-        if not interactions:
-            continue
+        interactions = all_interactions.get((agent, cap), [])
 
         X, Y = zip(*interactions)
 
@@ -267,11 +251,6 @@ def graph_interactions(metrics: Metrics, path_prefix: str):
         ax.scatter(X, Y)
 
         ax.title.set_text(f"{agent} {cap}")
-
-        #ax.set_xlim(min(X), max(X))
-        #ax.plot([min(X)-100+i for i in range(len(yaxis_categories))], yaxis_categories)
-        #ax.set_yticks(yaxis_categories)
-        #ax.set_ylim(0 - 0.5, len(yaxis_categories) - 1 + 0.5)
 
     fig.subplots_adjust(hspace=0.35)
 
@@ -398,28 +377,67 @@ def graph_interactions_performed(metrics: Metrics, path_prefix: str):
         for capability in metrics.capability_names
     }
 
-    fig, axs = plt.subplots(nrows=len(metrics.agent_names), ncols=len(metrics.capability_names), sharex=True, squeeze=False, figsize=(18,30))
+    all_agent_select_fails = {
+        (agent, capability): [t for (t, a, c) in metrics.interaction_agent_select_fail if a == agent and c == capability]
+        for agent in metrics.agent_names
+        for capability in metrics.capability_names
+    }
+
+    fig, axs = plt.subplots(
+        nrows=len(metrics.agent_names),
+        ncols=len(metrics.capability_names),
+        sharex=True,
+        squeeze=False,
+        figsize=(18,30)
+    )
+
+    # Calculate ymax
+    ymax = 0
+    for (agent, col) in itertools.product(metrics.agent_names, metrics.capability_names):
+        try:
+            interactions = all_interactions[(agent, col)]
+        except KeyError:
+            # Skip when there are no evictions
+            interactions = []
+
+        agent_select_fails = all_agent_select_fails[(agent, col)]
+
+        bins = np.arange(min(interactions + agent_select_fails), max(interactions + agent_select_fails), 5)
+
+        h, _ = np.histogram(interactions + agent_select_fails, bins)
+
+        ymax = max(ymax, max(h))
+
 
     for (agent, col) in itertools.product(metrics.agent_names, metrics.capability_names):
         try:
             interactions = all_interactions[(agent, col)]
         except KeyError:
             # Skip when there are no evictions
-            continue
+            interactions = []
 
-        # Skip when there were no evictions
-        if not interactions:
-            continue
+        agent_select_fails = all_agent_select_fails[(agent, col)]
 
         ax = axs[metrics.agent_names.index(agent), metrics.capability_names.index(col)]
 
-        bins = np.arange(min(interactions), max(interactions), 5)
+        bins = np.arange(min(interactions + agent_select_fails), max(interactions + agent_select_fails), 5)
 
-        ax.hist(interactions, bins, histtype='bar')
+        ax.hist(
+            [interactions, agent_select_fails],
+            bins,
+            histtype='barstacked',
+            stacked=True,
+            label=["interactions", "agent select fails"]
+        )
 
+        ax.set_ylim(0, ymax)
         ax.title.set_text(f"{agent} {col}")
-
         ax.tick_params(axis='y', labelsize="small")
+
+        ax.legend(loc='upper right')
+
+    for ax in axs[-1,:]:
+        ax.set_xlabel("Time (s)")
 
     fig.subplots_adjust(hspace=0.35)
 

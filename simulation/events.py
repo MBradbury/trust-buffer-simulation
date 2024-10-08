@@ -67,14 +67,14 @@ class AgentCapabilityTask(BaseEvent):
     def action(self, sim: Simulator):
         super().action(sim)
 
-        sim.metrics.add_interaction_performed(self.event_time, self.agent, self.capability)
-
         selected_agent = self.agent.choose_agent_for_task(self.capability)
 
         if selected_agent is not None:
             self.agent.perform_interaction(selected_agent, self.capability)
+            sim.metrics.add_interaction_performed(self.event_time, self.agent, self.capability)
         else:
             self.log(sim, "Unable to select agent to perform task")
+            sim.metrics.add_interaction_agent_select_fail(sim.current_time, self.agent, self.capability)
 
         # Re-add this event
         self.event_time += self.capability.next_task_period(sim.rng)

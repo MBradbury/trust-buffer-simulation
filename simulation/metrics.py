@@ -32,6 +32,7 @@ class BufferEvaluation:
 class Metrics:
     def __init__(self):
         self.interaction_performed: list[tuple[float, str, str]] = []
+        self.interaction_agent_select_fail: list[tuple[float, str, str]] = []
         self.buffers: list[BufferEvaluation] = []
 
         self.evicted_crypto: list[tuple[float, str, tuple[str]]] = []
@@ -74,6 +75,9 @@ class Metrics:
     def add_interaction_performed(self, t: float, agent: Agent, capability: Capability):
         self.interaction_performed.append((t, agent.name, capability.name))
 
+    def add_interaction_agent_select_fail(self, t: float, agent: Agent, capability: Capability):
+        self.interaction_agent_select_fail.append((t, agent.name, capability.name))
+
     def save(self, sim: Simulator, args: argparse.Namespace, path_prefix: str="./"):
         # Save information from sim
 
@@ -90,6 +94,10 @@ class Metrics:
             for agent in sim.agents
             for (capability, behaviour) in agent.capability_behaviour.items()
         }
+
+        # Record challenge response behaviour changes too
+        for agent in sim.agents:
+            self.behaviour_changes[(agent.name, "CR")] = agent.challenge_response_behaviour.state_history
 
         path = pathlib.Path(f"{path_prefix}metrics.{sim.seed}.pickle.bz2")
 

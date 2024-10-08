@@ -10,6 +10,7 @@ import gc
 import pickle
 from typing import cast
 import statistics
+from typing import Any, Callable
 
 import numpy as np
 import pandas as pd
@@ -27,7 +28,7 @@ from combine_results import CombinedMetrics
 plt.rcParams['text.usetex'] = True
 plt.rcParams['font.size'] = 12
 
-def graph_utility_summary(all_metrics: dict[str, CombinedMetrics], path_prefix: str):
+def graph_utility_summary(all_metrics: dict[tuple[str, ...], CombinedMetrics], path_prefix: str):
 
     all_utilities = {
         path.split("-")[0]: metrics.normed_utilities
@@ -69,7 +70,7 @@ def get_box_plot_data(labels, bp):
 
     return pd.DataFrame(rows_list)
 
-def graph_utility_summary_grouped_es(all_metrics: dict[str, CombinedMetrics], path_prefix: str):
+def graph_utility_summary_grouped_es(all_metrics: dict[tuple[str, ...], CombinedMetrics], path_prefix: str):
 
     print(len(all_metrics))
 
@@ -205,13 +206,13 @@ def graph_capacity_utility_es(all_metrics: dict[str, CombinedMetrics], path_pref
     print(strategies)
     print(sizes)
 
-    data = []
+    data: list[tuple[float, str, str, float]] = []
 
     for behaviour, size in itertools.product(behaviours, sizes):
         print(behaviour, size)
 
         data.extend(
-            (metrics_capacity(metrics), behaviour, path[1], np.median(metrics.normed_utilities))
+            (metrics_capacity(metrics), behaviour, path[1], statistics.median(metrics.normed_utilities))
             for (path, metrics) in all_metrics.items()
             if path[0] == behaviour
             and path[-1] == size
@@ -243,7 +244,7 @@ def graph_capacity_utility_es(all_metrics: dict[str, CombinedMetrics], path_pref
         plt.close(fig)
         gc.collect()
 
-def graph_size_utility_es(all_metrics: dict[str, CombinedMetrics], path_prefix: str):
+def graph_size_utility_es(all_metrics: dict[tuple[str, ...], CombinedMetrics], path_prefix: str):
     behaviours = list(sorted({path[0] for path in all_metrics.keys()}))
     sizes = list(sorted({path[-1] for path in all_metrics.keys()}))
 
@@ -290,24 +291,14 @@ def graph_size_utility_es(all_metrics: dict[str, CombinedMetrics], path_prefix: 
     plt.close(fig)
     gc.collect()
 
-# from: http://louistiao.me/posts/adding-__name__-and-__doc__-attributes-to-functoolspartial-objects/
-def wrapped_partial(func, *args, **kwargs):
-    partial_func = functools.partial(func, *args, **kwargs)
-    functools.update_wrapper(partial_func, func)
-    return partial_func
-
-def call(fn):
-    print(f"Running {fn.__name__}")
-    fn()
-
-def metrics_path_to_details(path):
+def metrics_path_to_details(path: str) -> tuple[str, ...]:
     spath = list(path.split("/"))
 
     spath[-1] = spath[-1].split("-")[0]
 
     return tuple(spath)
 
-def main(args):
+def main(args: argparse.Namespace):
     metrics_paths = [
         f"{metrics_dir}/{file}"
         for metrics_dir in args.metrics_dirs
@@ -315,23 +306,23 @@ def main(args):
         if fnmatch.fnmatch(f"{metrics_dir}/{file}", "*.combined.pickle.bz2")
     ]
 
-    all_metrics = {}
+    all_metrics: dict[tuple[str, ...], CombinedMetrics] = {}
 
     print("Loading metrics...")
 
     for metrics_path in metrics_paths:
         with bz2.open(metrics_path, "rb") as f:
-            all_metrics[metrics_path_to_details(metrics_path)] = pickle.load(f)
+            all_metrics[metrics_path_to_details(metrics_path)] = cast(CombinedMetrics, pickle.load(f))
 
     print(f"Loaded {len(all_metrics)} metrics!")
 
     fns = [graph_utility_summary_grouped_es]
-    fns = [wrapped_partial(fn, all_metrics, args.path_prefix) for fn in fns]
 
     print("Creating graphs...")
 
     for fn in fns:
-        call(fn)
+        print(f"Running {fn.__name__}")
+        fn(all_metrics, args.path_prefix)
 
 if __name__ == "__main__":
     import argparse
