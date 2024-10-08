@@ -7,11 +7,11 @@ import functools
 import os
 import fnmatch
 import gc
-from collections import defaultdict
 import pickle
+from typing import cast
+import statistics
 
 import numpy as np
-from scipy.stats import describe
 import pandas as pd
 
 import matplotlib as mpl
@@ -39,7 +39,7 @@ def graph_utility_summary(all_metrics: dict[str, CombinedMetrics], path_prefix: 
     fig = plt.figure()
     ax = fig.gca()
 
-    ax.boxplot(Xs, labels=labels)
+    ax.boxplot(Xs, label=labels)
 
     ax.set_ylim(0, 1)
     ax.set_ylabel('Utility (\\%)')
@@ -93,7 +93,7 @@ def graph_utility_summary_grouped_es(all_metrics: dict[str, CombinedMetrics], pa
         }
 
         all_utilities_medians = {
-            k: np.median(v)
+            k: statistics.median(v)
             for (k, v) in all_utilities.items()
         }
 
@@ -105,7 +105,7 @@ def graph_utility_summary_grouped_es(all_metrics: dict[str, CombinedMetrics], pa
         ax = fig.gca()
 
         bp = ax.boxplot(Xs,
-                        labels=labels,
+                        label=labels,
                         showmeans=True,
                         showfliers=False,
                         patch_artist=color,
@@ -166,20 +166,24 @@ def graph_utility_summary_grouped_es(all_metrics: dict[str, CombinedMetrics], pa
 
 
 
-def metrics_agents_capabilities(metrics: CombinedMetrics) -> tuple:
+def metrics_agents_capabilities(metrics: CombinedMetrics) -> tuple[int, int]:
+    assert metrics.args is not None
+
     num_agents = sum(num_agents for (num_agents, behaviour) in args.agents)
-    num_capabilities = metrics.args.num_capabilities
+    num_capabilities = cast(int, metrics.args.num_capabilities)
 
     return (num_agents, num_capabilities)
 
 def metrics_capacity(metrics: CombinedMetrics) -> float:
+    assert metrics.args is not None
+
     num_agents = metrics.num_agents()
     num_capabilities = metrics.num_capabilities()
 
-    max_crypto_buf = metrics.args.max_crypto_buf
-    max_trust_buf = metrics.args.max_trust_buf
-    max_reputation_buf = metrics.args.max_reputation_buf
-    max_stereotype_buf = metrics.args.max_stereotype_buf
+    max_crypto_buf = cast(int, metrics.args.max_crypto_buf)
+    max_trust_buf = cast(int, metrics.args.max_trust_buf)
+    max_reputation_buf = cast(int, metrics.args.max_reputation_buf)
+    max_stereotype_buf = cast(int, metrics.args.max_stereotype_buf)
 
     crypto_capacity = min(1, max_crypto_buf / (num_agents - 1))
     trust_capacity = min(1, max_trust_buf / ((num_agents - 1) * num_capabilities))

@@ -309,8 +309,19 @@ def graph_interactions_utility_hist(metrics: Metrics, path_prefix: str):
     fig = plt.figure()
     ax = fig.gca()
 
-    ax.hist([correct, incorrect, incorrect_imp], bins, histtype='bar', stacked=True,
-            label=[f"Correct ({len(correct)})", f"Incorrect ({len(incorrect)})", f"Incorrect (Imp) ({len(incorrect_imp)})"])
+    ax.hist([
+                correct,
+                incorrect,
+                incorrect_imp
+            ],
+            bins,
+            histtype='bar',
+            stacked=True,
+            label=[
+                f"Correct ({len(correct)})",
+                f"Incorrect ({len(incorrect)})",
+                f"Incorrect (Imp) ({len(incorrect_imp)})"
+            ])
     ax.legend()
 
     ax.set_xlim(0, 1)
@@ -420,6 +431,7 @@ def call(fn):
     fn()
 
 def main(args):
+    assert isinstance(args.metrics_path, str)
     with bz2.open(args.metrics_path, "rb") as f:
         metrics = pickle.load(f)
 

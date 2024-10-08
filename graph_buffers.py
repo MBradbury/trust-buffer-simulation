@@ -13,7 +13,7 @@ import os
 
 from utils.graphing import savefig
 from simulation.capability_behaviour import InteractionObservation
-from simulation.metrics import Metrics
+from simulation.metrics import Metrics, BufferEvaluation
 
 from pygraphviz import *
 
@@ -38,7 +38,7 @@ buffer_colours = {
     "stereotype": "#BCBD22", #"darkslategray2",
 }
 
-def graph_buffer_direct(metrics: Metrics, path_prefix: str, n: int, total_n: int, tb):
+def graph_buffer_direct(metrics: Metrics, path_prefix: str, n: int, total_n: int, tb: BufferEvaluation):
     p = AGraph(
         label=f"({tb.source} {tb.capability}) generating task, utility={tb.utility}",
         margin="0",
@@ -283,9 +283,13 @@ def graph_legend(metrics: Metrics, path_prefix: str):
 def call(fn):
     fn()
 
-def main(args):
+def main(args: argparse.Namespace):
+    assert isinstance(args.metrics_path, str)
+
     with bz2.open(args.metrics_path, "rb") as f:
         metrics = pickle.load(f)
+
+    assert isinstance(metrics, Metrics)
 
     fns = [
         functools.partial(graph_buffer_direct, metrics, args.path_prefix, n, len(metrics.buffers), b)

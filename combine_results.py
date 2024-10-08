@@ -23,7 +23,7 @@ class ParametersDifferError(RuntimeError):
 
 class CombinedMetrics:
     def __init__(self):
-        self.normed_utilities = []
+        self.normed_utilities: list[float] = []
         self.args: argparse.Namespace | None = None
 
     def update(self, m: Metrics):
@@ -42,12 +42,14 @@ class CombinedMetrics:
         pass
 
     def num_agents(self) -> int:
+        assert self.args is not None
         return sum(num_agents for (num_agents, _behaviour) in self.args.agents)
 
     def num_capabilities(self) -> int:
+        assert self.args is not None
         return self.args.num_capabilities
 
-def fn(args: argparse.Namespace):
+def fn(args: tuple[str, str, list[str]]):
     (metrics_dir, prefix, files) = args
 
     print(f"Processing {metrics_dir} {prefix} {len(files)} files...")
@@ -82,7 +84,7 @@ def fn(args: argparse.Namespace):
         pickle.dump(m, f)
 
 def main(args: argparse.Namespace):
-    metrics_paths = {
+    metrics_paths: dict[str, list[str]] = {
         metrics_dir: [
             file
             for file in os.listdir(metrics_dir)
@@ -92,11 +94,11 @@ def main(args: argparse.Namespace):
         for metrics_dir in args.metrics_dirs
     }
 
-    new_metrics_paths = {}
+    new_metrics_paths = dict[str, dict[str, list[str]]]()
 
     # Now need to group the results
     for (metrics_dir, files) in metrics_paths.items():
-        new_metrics_paths[metrics_dir] = {}
+        new_metrics_paths[metrics_dir] = dict[str, list[str]]()
 
         prefixes = {file.split("-")[0] for file in files}
 
@@ -105,7 +107,7 @@ def main(args: argparse.Namespace):
 
             new_metrics_paths[metrics_dir][prefix] = selected_files
 
-    args = [
+    fn_args = [
         (metrics_dir, prefix, files)
 
         for (metrics_dir, prefix_files) in new_metrics_paths.items()
@@ -120,7 +122,7 @@ def main(args: argparse.Namespace):
     print(f"Running with {usable_cpus} processes")
 
     with multiprocessing.Pool(usable_cpus) as pool:
-        for _ in tqdm.tqdm(pool.imap_unordered(fn, args), total=len(args)):
+        for _ in tqdm.tqdm(pool.imap_unordered(fn, fn_args), total=len(fn_args)):
             pass
 
 if __name__ == "__main__":
