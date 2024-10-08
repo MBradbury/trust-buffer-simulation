@@ -23,9 +23,13 @@ python3 -m venv .venv
 source .venv/bin/activate
 ```
 
-Install Python dependencies
+Install Python dependencies:
 ```bash
 python -m pip install matplotlib numpy scipy hmmlearn tqdm pygraphviz seaborn more_itertools frozenlist typing_extensions
+```
+or alternatively, install from `requirements.txt`:
+```bash
+python -m pip install -r requirements.txt
 ```
 
 # Running an Experiment
