@@ -36,7 +36,8 @@ class Agent:
 
         # Generate a EUI64, use the name as the random seed as this should be unique
         # We use a EUI64 as this is typically used by the target devices
-        self.eui64 = random.Random(self.name).randbytes(8)
+        eui64_bytes = random.Random(self.name).randbytes(8)
+        self.eui64 = eui64_bytes.hex(":")
 
         self.capabilities = capabilities
         self.capability_behaviour = {capability: behaviour() for capability in self.capabilities}
