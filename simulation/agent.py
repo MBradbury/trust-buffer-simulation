@@ -205,13 +205,13 @@ class Agent:
 
         self.sim.add_event(AgentTaskInteraction(self.sim.current_time + EPSILON, self, capability, selected_agent, buffers))
 
-    def receive_challenge(self, agent: Agent):
+    def receive_challenge(self, requester: Agent):
         assert self.sim is not None
         assert self.challenge_execution_time is not None
 
         behaviour = self.challenge_response_behaviour.next_interaction(self.sim.rng.getrandbits(32), self.sim.current_time)
 
-        self.log(f"Received challenge from {agent} and behaving {behaviour}")
+        self.log(f"CR: Received challenge from {requester} and behaving {behaviour}")
 
         if behaviour == InteractionObservation.Correct:
             # Behave well and send correct response on-time
@@ -219,7 +219,7 @@ class Agent:
             challenge_execution_time_random = skewnorm.rvs(loc=1, scale=1, a=10, random_state=self.sim.rng.getrandbits(32))
             challenge_execution_time = self.challenge_execution_time + challenge_execution_time_random
 
-            self.sim.add_event(AgentReceiveChallengeResponse(self.sim.current_time + challenge_execution_time, self, agent, behaviour))
+            self.sim.add_event(AgentReceiveChallengeResponse(self.sim.current_time + challenge_execution_time, requester, self, behaviour))
         else:
             # Choose how to behave incorrectly
             # Could do any of:
@@ -230,17 +230,26 @@ class Agent:
             challenge_execution_time_random = skewnorm.rvs(loc=1, scale=1, a=10, random_state=self.sim.rng.getrandbits(32))
             challenge_execution_time = self.challenge_execution_time + challenge_execution_time_random
 
-            self.sim.add_event(AgentReceiveChallengeResponse(self.sim.current_time + challenge_execution_time, self, agent, behaviour))
+            self.sim.add_event(AgentReceiveChallengeResponse(self.sim.current_time + challenge_execution_time, requester, self, behaviour))
 
     def update_challenge_response(self, agent: Agent, outcome: InteractionObservation):
         assert self.sim is not None
 
+        cr_item = self.buffers.find_challenge_response(agent)
+
+        # When updating Cuckoo filter state, it is important to avoid certain actions
+        # For example,
+        # * Adding an item when already present
+        # * Removing an item when not present
+        # This is challenging, as the ChallengeResponseItem may be evicted
+        # So we try our best with the information in the item and fall back to querying
+        # the cuckoo filter in the worst case
+
         # Record seen
         if self.buffers.encountered is not None:
-            if not self.buffers.encountered.contains(agent.eui64):
+            if cr_item is None and not self.buffers.encountered.contains(agent.eui64):
+                self.log(f"Cuckoo: {self.name} adding {agent.name} to encountered")
                 self.buffers.encountered.insert(agent.eui64)
-
-        cr_item = self.buffers.find_challenge_response(agent)
 
         # Need to add item if not in buffer
         if cr_item is None:
@@ -252,15 +261,26 @@ class Agent:
             assert cr_item is new_cr_item or cr_item is None
 
         if cr_item is not None:
+            old_epoch = cr_item.epoch
+
             cr_item.record(outcome)
 
-            # Record in cuckoo filters the stats
+            new_epoch = cr_item.epoch
+
+            # Record in cuckoo filters the status
+            # Detect goodness changes via epoch number
             if self.buffers.badlist is not None:
-                if cr_item.good:
-                    self.buffers.badlist.delete(agent.eui64)
-                else:
-                    if not self.buffers.badlist.contains(agent.eui64):
-                        self.buffers.badlist.insert(agent.eui64)
+                # Need to check for epoch == 0 to handle behaviour changes over item evictions
+                if old_epoch != new_epoch or new_epoch == 0:
+                    if cr_item.good:
+                        if self.buffers.badlist.contains(agent.eui64):
+                            self.log(f"Cuckoo: {self.name} removing {agent.name} to bad list")
+                            self.buffers.badlist.delete(agent.eui64)
+                    else:
+                        # This is either when the epoch changes or the epoch is 0 (for the first item)
+                        if not self.buffers.badlist.contains(agent.eui64):
+                            self.log(f"Cuckoo: {self.name} adding {agent.name} to bad list")
+                            self.buffers.badlist.insert(agent.eui64)
 
             # Record that we have used it
             self.sim.es.use_challenge_response(cr_item)

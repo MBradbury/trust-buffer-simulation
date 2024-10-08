@@ -127,6 +127,12 @@ class AgentBuffers:
         self.badlist = None
         self.encountered = None
         if cuckoo_max_capacity > 0:
+            # Important to maintain this as a badlist
+            # Cuckoo filters will provide the ability to test
+            # 1. if an item is definitely not in the cuckoo filter
+            # 2. if an item may be in the cuckoo filter
+            # We are interested in absence from being bad,
+            # so more important to be able to test if an item is not in the list for certain
             self.badlist = CuckooFilter(capacity=cuckoo_max_capacity, bucket_size=4, fingerprint_size=1)
             self.encountered = CuckooFilter(capacity=cuckoo_max_capacity, bucket_size=4, fingerprint_size=1)
 
