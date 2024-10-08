@@ -51,7 +51,7 @@ def main(args):
               args.max_reputation_buf,
               args.max_stereotype_buf,
               args.max_cr_buf,
-              args.cuckoo)
+              args.cuckoo_max_capacity)
 
         for (n, behaviour) in enumerate(chain.from_iterable(agent_behaviours))
     ]
@@ -132,8 +132,8 @@ if __name__ == "__main__":
                         help='The maximum length of the stereotype buffer')
     parser.add_argument('--max-cr-buf', type=int, required=False, default=0,
                         help='The maximum length of the challenge-response buffer')
-    parser.add_argument('--cuckoo', action="store_true", required=False, default=False,
-                        help='Should the cuckoo filters be enabled?')
+    parser.add_argument('--cuckoo-max-capacity', type=int, required=False, default=0,
+                        help='Maximum capacity of cuckoo filter')
 
     parser.add_argument('--challenge-response-period', type=float, default=None,
                         help='If challenge-response is enabled, how often should challenge-response be sent')

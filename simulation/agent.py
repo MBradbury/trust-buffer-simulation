@@ -31,7 +31,7 @@ class Agent:
                  reputation_bux_max: int,
                  stereotype_bux_max: int,
                  cr_bux_max: int,
-                 cuckoo: bool):
+                 cuckoo_max_capacity: int):
         self.name = name
 
         # Generate a EUI64, use the name as the random seed as this should be unique
@@ -57,7 +57,7 @@ class Agent:
             if self.challenge_execution_time is None:
                 raise ValueError("Must set challenge_execution_time if challenge_response_period is set")
 
-        self.buffers = AgentBuffers(self, crypto_bux_max, trust_bux_max, reputation_bux_max, stereotype_bux_max, cr_bux_max, cuckoo)
+        self.buffers = AgentBuffers(self, crypto_bux_max, trust_bux_max, reputation_bux_max, stereotype_bux_max, cr_bux_max, cuckoo_max_capacity)
 
         self.sim: Simulator | None = None
 
@@ -237,7 +237,8 @@ class Agent:
 
         # Record seen
         if self.buffers.encountered is not None:
-            self.buffers.encountered.insert(agent.eui64)
+            if not self.buffers.encountered.contains(agent.eui64):
+                self.buffers.encountered.insert(agent.eui64)
 
         cr_item = self.buffers.find_challenge_response(agent)
 
@@ -258,7 +259,8 @@ class Agent:
                 if cr_item.good:
                     self.buffers.badlist.delete(agent.eui64)
                 else:
-                    self.buffers.badlist.insert(agent.eui64)
+                    if not self.buffers.badlist.contains(agent.eui64):
+                        self.buffers.badlist.insert(agent.eui64)
 
             # Record that we have used it
             self.sim.es.use_challenge_response(cr_item)

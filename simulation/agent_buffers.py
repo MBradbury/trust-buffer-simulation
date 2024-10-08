@@ -115,7 +115,7 @@ class AgentBuffers:
                  reputation_bux_max: int,
                  stereotype_bux_max: int,
                  cr_buf_max: int,
-                 cuckoo: bool):
+                 cuckoo_max_capacity: int):
         self.agent = agent
 
         self.crypto = BoundedList[CryptoItem](length=crypto_bux_max)
@@ -126,9 +126,9 @@ class AgentBuffers:
 
         self.badlist = None
         self.encountered = None
-        if cuckoo:
-            self.badlist = CuckooFilter(capacity=10000, bucket_size=4, fingerprint_size=1)
-            self.encountered = CuckooFilter(capacity=10000, bucket_size=4, fingerprint_size=1)
+        if cuckoo_max_capacity > 0:
+            self.badlist = CuckooFilter(capacity=cuckoo_max_capacity, bucket_size=4, fingerprint_size=1)
+            self.encountered = CuckooFilter(capacity=cuckoo_max_capacity, bucket_size=4, fingerprint_size=1)
 
     def frozen_copy(self) -> AgentBuffers:
         f = copy.deepcopy(self)
