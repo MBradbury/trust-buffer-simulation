@@ -4,6 +4,7 @@ from functools import total_ordering
 
 from simulation.capability_behaviour import InteractionObservation
 from simulation.utility_targets import UtilityTargets
+from simulation.constants import EPSILON
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -48,7 +49,7 @@ class AgentInit(BaseEvent):
         super().action(sim)
 
         # Start trust dissemination if we are configured to store the information
-        sim.add_event(AgentTrustDissemination(self.event_time + self.agent.next_trust_dissemination_period(sim.rng), self.agent))
+        sim.add_event(AgentTrustDissemination(self.event_time + EPSILON, self.agent))
 
         for capability in self.agent.capabilities:
             sim.add_event(AgentCapabilityTask(self.event_time + capability.next_task_period(sim.rng), self.agent, capability))
