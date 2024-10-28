@@ -41,6 +41,8 @@ class Metrics:
         self.evicted_stereotype: list[tuple[float, str, tuple[str, str]]] = []
         self.evicted_challenge_response: list[tuple[float, str, tuple[str]]] = []
 
+        self.duration: float = 0
+
     def add_buffer_evaluation(self, t: float,
                               source: Agent, capability: Capability,
                               outcomes: dict[Agent, InteractionObservation],

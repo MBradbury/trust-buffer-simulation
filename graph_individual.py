@@ -8,6 +8,7 @@ from itertools import chain
 import multiprocessing
 import functools
 import bz2
+import math
 
 import numpy as np
 
@@ -261,6 +262,55 @@ def graph_interactions(metrics: Metrics, path_prefix: str):
 
     plt.close(fig)
 
+def graph_interactions_summary(metrics: Metrics, path_prefix: str):
+
+    capabilities = sorted({b.capability for b in metrics.buffers})
+
+    all_interactions = {
+        capability: [
+            (b.t, b.outcome)
+            for b in metrics.buffers
+            if b.capability == capability
+        ]
+
+        for capability in capabilities
+    }
+
+    fig, axs = plt.subplots(nrows=1, ncols=len(capabilities), sharex=True, squeeze=False, figsize=(18,20))
+
+    for cap in capabilities:
+        interactions = all_interactions.get(cap, [])
+
+        if not interactions:
+            continue
+
+        outcomes = list(InteractionObservation)
+
+        split_interactions = {
+            outcome: [t for (t, out) in interactions if out == outcome]
+            for outcome in outcomes
+        }
+
+        ax = axs[0, capabilities.index(cap)]
+
+        labels, X = zip(*split_interactions.items())
+
+        bins = np.linspace(0, metrics.duration, num=math.ceil(metrics.duration/10))
+        #print(bins)
+
+        ax.hist(X, bins=bins, label=labels, stacked=True)
+
+        ax.title.set_text(f"{cap}")
+        ax.set_xlabel("Time (Seconds)")
+        ax.set_ylabel("Interaction Count")
+        ax.legend()
+
+    fig.subplots_adjust(hspace=0.35)
+
+    savefig(fig, f"{path_prefix}interactions-summary.pdf")
+
+    plt.close(fig)
+
 def graph_interactions_utility_hist(metrics: Metrics, path_prefix: str):
 
     correct = [
@@ -457,7 +507,7 @@ def main(args):
         metrics = pickle.load(f)
 
     fns = [graph_utility, graph_max_utility, graph_utility_scaled, graph_utility_scaled_cap_colour, graph_utility_max_distance,
-           graph_behaviour_state, graph_interactions, graph_interactions_utility_hist,
+           graph_behaviour_state, graph_interactions, graph_interactions_summary, graph_interactions_utility_hist,
            #graph_evictions,
            graph_interactions_performed]
     fns = [functools.partial(fn, metrics, args.path_prefix) for fn in fns]

@@ -34,6 +34,7 @@ class Simulator:
         self.queue: list[BaseEvent] = []
 
         self.metrics = Metrics()
+        self.metrics.duration = duration
 
         self.log_level = log_level
 

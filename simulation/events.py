@@ -30,7 +30,7 @@ class BaseEvent:
         return self.event_time < other.event_time
 
 class BaseCryptoEvent(BaseEvent):
-    def _ensure_crypto_exists(self, sim: Simulator, agent: Agent, other: Agent):
+    def _ensure_crypto_exists(self, sim: Simulator, agent: Agent, other: Agent) -> bool:
         crypto = agent.buffers.find_crypto(other)
         if crypto is None:
             agent.receive_crypto_information(other)
@@ -47,6 +47,7 @@ class AgentInit(BaseEvent):
     def action(self, sim: Simulator):
         super().action(sim)
 
+        # Start trust dissemination if we are configured to store the information
         sim.add_event(AgentTrustDissemination(self.event_time + self.agent.next_trust_dissemination_period(sim.rng), self.agent))
 
         for capability in self.agent.capabilities:
