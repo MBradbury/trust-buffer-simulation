@@ -110,8 +110,8 @@ class CuckooAgentChooseBehaviour(AgentChooseBehaviour):
         assert agent.buffers.encountered is not None
 
         # Needs to be in crypto
-        options = [item for item in agent.buffers.crypto if capability in item.agent.capabilities]
-        if not options:
+        feasible_options = [item for item in agent.buffers.crypto if capability in item.agent.capabilities]
+        if not feasible_options:
             return None
 
         # Levels of preference
@@ -122,7 +122,7 @@ class CuckooAgentChooseBehaviour(AgentChooseBehaviour):
         # Try and find items that are not in the badlist that we have encountered
         options = [
             item
-            for item in options
+            for item in feasible_options
             if not agent.buffers.badlist.contains(item.agent.eui64)
             if agent.buffers.encountered.contains(item.agent.eui64)
         ]
@@ -132,13 +132,15 @@ class CuckooAgentChooseBehaviour(AgentChooseBehaviour):
             # Fall back to not previously seen items
             options = [
                 item
-                for item in options
+                for item in feasible_options
                 if not agent.buffers.badlist.contains(item.agent.eui64)
                 if not agent.buffers.encountered.contains(item.agent.eui64)
             ]
 
         if not options:
             # No good options at this point, everyone is known to be bad
+            # So just pick a random agent out of everyone we can interact with
+            options = feasible_options
             assert all(agent.buffers.badlist.contains(item.agent.eui64) for item in options)
 
         try:
