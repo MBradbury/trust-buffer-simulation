@@ -51,7 +51,8 @@ def main(args):
               args.max_reputation_buf,
               args.max_stereotype_buf,
               args.max_cr_buf,
-              args.cuckoo_max_capacity)
+              args.cuckoo_max_capacity,
+              args.sequential_fails_threshold)
 
         for (n, behaviour) in enumerate(chain.from_iterable(agent_behaviours))
     ]
@@ -139,6 +140,9 @@ if __name__ == "__main__":
                         help='If challenge-response is enabled, how often should challenge-response be sent')
     parser.add_argument('--challenge-execution-time', type=float, default=None,
                         help='How long it takes to execute a challenge')
+
+    parser.add_argument('--sequential-fails-threshold', type=int, required=False, default=1,
+                        help='Number of times a challenge needs to fail for an agent to be considered bad under Cuckoo')
 
     parser.add_argument('--eviction-strategy', type=str, required=True, choices=eviction_strategies(),
                         help='The eviction strategy')

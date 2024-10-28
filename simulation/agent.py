@@ -31,7 +31,8 @@ class Agent:
                  reputation_bux_max: int,
                  stereotype_bux_max: int,
                  cr_bux_max: int,
-                 cuckoo_max_capacity: int):
+                 cuckoo_max_capacity: int,
+                 sequential_fails_threshold: int):
         self.name = name
 
         # Generate a EUI64, use the name as the random seed as this should be unique
@@ -56,6 +57,9 @@ class Agent:
                 raise ValueError("Cannot enable challenge-response and have no buffer items")
             if self.challenge_execution_time is None:
                 raise ValueError("Must set challenge_execution_time if challenge_response_period is set")
+
+        # For Cuckoo
+        self.sequential_fails_threshold = sequential_fails_threshold
 
         self.buffers = AgentBuffers(self, crypto_bux_max, trust_bux_max, reputation_bux_max, stereotype_bux_max, cr_bux_max, cuckoo_max_capacity)
 
@@ -280,9 +284,13 @@ class Agent:
                             self.buffers.badlist.delete(agent.eui64)
                     else:
                         # This is either when the epoch changes or the epoch is 0 (for the first item)
-                        if not self.buffers.badlist.contains(agent.eui64):
-                            self.log(f"Cuckoo: {self.name} adding {agent.name} to bad list")
-                            self.buffers.badlist.insert(agent.eui64)
+
+                        # Check if there have been enough failures to move to bad list
+                        if cr_item.sequential_fails >= self.sequential_fails_threshold:
+                            # Make sure not already present
+                            if not self.buffers.badlist.contains(agent.eui64):
+                                self.log(f"Cuckoo: {self.name} adding {agent.name} to bad list")
+                                self.buffers.badlist.insert(agent.eui64)
 
             # Record that we have used it
             self.sim.es.use_challenge_response(cr_item)
