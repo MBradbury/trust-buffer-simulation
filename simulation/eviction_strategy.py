@@ -363,3 +363,35 @@ class CapabilityPriorityEvictionStrategy(EvictionStrategy):
             return
 
         item.eviction_data = self.sim.current_time
+
+class CuckooEvictionStrategy(EvictionStrategy):
+    """
+    Prefers to evict items about agents that are in the badlist first.
+    If none in the badlist, then falls back to LRU.
+    """
+    short_name = "Cuckoo"
+
+    def add_common(self, item: ItemT):
+        item.eviction_data = self.sim.current_time
+
+    def choose_common(self, items: Sequence[ItemT], buffers: AgentBuffers, new_item: ItemT) -> Optional[ItemT]:
+        assert buffers.badlist is not None
+
+        # No items to choose from to evict
+        if not items:
+            return None
+
+        # Evict badlisted agents first
+        badlisted_items = [item for item in items if buffers.badlist.contains(item.agent.eui64)]
+        if badlisted_items:
+            # Do LRU on badlisted items
+            return min(items, key=lambda x: x.eviction_data)
+
+        # Otherwise do LRU
+        return min(items, key=lambda x: x.eviction_data)
+
+    def use_common(self, item: ItemT | None):
+        if item is None:
+            return
+
+        item.eviction_data = self.sim.current_time
