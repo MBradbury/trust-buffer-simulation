@@ -11,7 +11,7 @@ from simulation.capability_behaviour import CapabilityBehaviour
 from simulation.events import AgentStereotypeRequest, AgentCryptoRequest, AgentTaskInteraction, InteractionObservation, AgentReceiveChallengeResponse
 from simulation.constants import EPSILON
 
-from scipy.stats import skewnorm
+from scipy.stats import halfnorm
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -216,7 +216,9 @@ class Agent:
         if behaviour == InteractionObservation.Correct:
             # Behave well and send correct response on-time
 
-            challenge_execution_time_random = skewnorm.rvs(loc=1, scale=1, a=10, random_state=self.sim.rng.getrandbits(32))
+            # Ideally, this would be a skew halfnorm, but scipy doesn't support this
+            # so just go with a halfnorm
+            challenge_execution_time_random = halfnorm.rvs(loc=0, scale=1, random_state=self.sim.rng.getrandbits(32))
             challenge_execution_time = self.challenge_execution_time + challenge_execution_time_random
 
             self.sim.add_event(AgentReceiveChallengeResponse(self.sim.current_time + challenge_execution_time, requester, self, behaviour))
@@ -227,7 +229,7 @@ class Agent:
             # 2. Send correct result late
             # 3. Do not reply
             # For simplicty will just model #1
-            challenge_execution_time_random = skewnorm.rvs(loc=1, scale=1, a=10, random_state=self.sim.rng.getrandbits(32))
+            challenge_execution_time_random = halfnorm.rvs(loc=0, scale=1, random_state=self.sim.rng.getrandbits(32))
             challenge_execution_time = self.challenge_execution_time + challenge_execution_time_random
 
             self.sim.add_event(AgentReceiveChallengeResponse(self.sim.current_time + challenge_execution_time, requester, self, behaviour))
